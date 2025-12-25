@@ -56,7 +56,7 @@ jobs:
           VITE_SHEET_NAME: ${{ secrets.VITE_SHEET_NAME || 'Sheet1' }}
           VITE_DATA_SHEET_NAME: ${{ secrets.VITE_DATA_SHEET_NAME || 'Data' }}
           VITE_LOW_STOCK_THRESHOLD: ${{ secrets.VITE_LOW_STOCK_THRESHOLD || '10' }}
-          VITE_BASE_PATH: /gsheet_stockinventory/
+          VITE_BASE_PATH: /roryinventory/
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
