@@ -25,6 +25,9 @@ export default defineConfig({
   build: {
     // Generate source maps for production debugging (optional)
     sourcemap: false,
+    // Copy public folder files to dist root (Vite does this automatically)
+    // Files in public/ are copied to dist/ during build
+    copyPublicDir: true,
     // Optimize chunk size
     rollupOptions: {
       output: {
