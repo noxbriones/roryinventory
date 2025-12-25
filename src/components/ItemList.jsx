@@ -129,7 +129,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                     <tr
                       key={item.id}
                       onClick={() => onEdit(item)}
-                      className={`cursor-pointer hover:bg-muted/50 transition-colors ${
+                      className={`cursor-pointer hover:bg-primary/10 transition-colors ${
                         index !== filteredItems.length - 1 ? 'border-b' : ''
                       }`}
                     >

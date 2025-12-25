@@ -4,10 +4,41 @@ import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
-import { Loader2, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Trash2 } from 'lucide-react'
+import { Loader2, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getQuantityLogEntries } from '../services/googleSheetsService'
 import { Select } from './ui/select'
 import { useInventory } from '../context/InventoryContext'
+
+// Helper function to get today's date in YYYY-MM-DD format
+const getTodayDate = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Helper function to format date to YYYY-MM-DD for date input
+const formatDateToInput = (date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Helper function to get previous date
+const getPreviousDate = (dateString) => {
+  const date = new Date(dateString)
+  date.setDate(date.getDate() - 1)
+  return formatDateToInput(date)
+}
+
+// Helper function to get next date
+const getNextDate = (dateString) => {
+  const date = new Date(dateString)
+  date.setDate(date.getDate() + 1)
+  return formatDateToInput(date)
+}
 
 const ChangesLog = () => {
   const { openCleanupDialog } = useInventory()
@@ -15,7 +46,7 @@ const ChangesLog = () => {
   const [filteredEntries, setFilteredEntries] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [dateFilter, setDateFilter] = useState('') // Format: YYYY-MM-DD
+  const [dateFilter, setDateFilter] = useState(getTodayDate()) // Format: YYYY-MM-DD, defaults to today
   const [itemFilter, setItemFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('all') // 'all', 'Add', 'Subtract', 'Set'
 
@@ -176,13 +207,35 @@ const ChangesLog = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-4 border-b">
             <div className="space-y-2">
               <Label htmlFor="dateFilter">Filter by Date</Label>
-              <Input
-                id="dateFilter"
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full"
-              />
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setDateFilter(getPreviousDate(dateFilter || getTodayDate()))}
+                  className="h-10 w-10 flex-shrink-0"
+                  title="Previous date"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Input
+                  id="dateFilter"
+                  type="date"
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setDateFilter(getNextDate(dateFilter || getTodayDate()))}
+                  className="h-10 w-10 flex-shrink-0"
+                  title="Next date"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
               {dateFilter && (
                 <Button
                   variant="ghost"
@@ -253,7 +306,7 @@ const ChangesLog = () => {
                   {filteredEntries.map((entry, index) => (
                     <tr
                       key={`${entry.timestamp}-${entry.itemId}-${index}`}
-                      className={`hover:bg-muted/50 transition-colors ${
+                      className={`hover:bg-primary/10 transition-colors ${
                         index !== filteredEntries.length - 1 ? 'border-b' : ''
                       }`}
                     >

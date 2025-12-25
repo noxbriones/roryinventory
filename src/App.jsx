@@ -44,10 +44,13 @@ function AppContent() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-500 to-purple-700 p-4">
-        <div className="bg-white rounded-lg shadow-xl p-6 sm:p-8 max-w-md w-full">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-gray-800">RORY Stock Inventory</h1>
-          <p className="text-center text-sm sm:text-base text-gray-600 mb-6">Sign in with Google to access your inventory</p>
+      <div className="min-h-screen flex items-center justify-center bg-primary p-4">
+        <div className="bg-card rounded-lg shadow-xl p-6 sm:p-8 max-w-md w-full">
+          <div className="flex justify-center mb-4">
+            <img src="/logo.png" alt="RORY Logo" className="h-16 sm:h-20 w-auto" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-card-foreground">RORY Stock Inventory</h1>
+          <p className="text-center text-sm sm:text-base text-muted-foreground mb-6">Sign in with Google to access your inventory</p>
           <Button onClick={handleSignIn} className="w-full" size="lg">
             Sign in with Google
           </Button>
@@ -57,16 +60,19 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg">
+    <div className="min-h-screen bg-primary-very-light">
+      <header className="bg-primary text-white shadow-lg">
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex flex-row justify-between items-center gap-2 sm:gap-3">
-            <h1 
-              className="text-base sm:text-xl md:text-2xl font-bold truncate min-w-0 flex-shrink cursor-pointer hover:opacity-80 transition-opacity"
+            <div 
+              className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setCurrentPage('inventory')}
             >
-              RORY Stock Inventory
-            </h1>
+              <img src="/logo-white.png" alt="RORY Logo" className="h-6 sm:h-8 w-auto flex-shrink-0" />
+              <h1 className="text-base sm:text-xl md:text-2xl font-bold truncate min-w-0">
+                RORY Stock Inventory
+              </h1>
+            </div>
             <div className="flex flex-row gap-2 flex-shrink-0">
               {currentPage === 'inventory' ? (
                 <>
@@ -83,7 +89,7 @@ function AppContent() {
                   <Button 
                     onClick={() => setCurrentPage('changes')} 
                     variant="default"
-                    className="bg-purple-900 hover:bg-purple-950 text-white flex-1 sm:flex-none text-sm sm:text-base"
+                    className="bg-primary-dark hover:bg-primary text-white flex-1 sm:flex-none text-sm sm:text-base"
                     size="sm"
                     title="Change Log"
                   >
@@ -95,7 +101,7 @@ function AppContent() {
                 <Button 
                   onClick={() => setCurrentPage('inventory')} 
                   variant="default"
-                  className="bg-purple-900 hover:bg-purple-950 text-white flex-1 sm:flex-none text-sm sm:text-base"
+                  className="bg-primary-dark hover:bg-primary text-white flex-1 sm:flex-none text-sm sm:text-base"
                   size="sm"
                   title="Home"
                 >

@@ -404,9 +404,25 @@ export const InventoryProvider = ({ children }) => {
           <DialogHeader>
             <DialogTitle>Clean Up Old Log Entries?</DialogTitle>
             <DialogDescription>
-              It's been more than 3 months since the last cleanup. Would you like to remove quantity log entries older than 3 months?
-              <br /><br />
-              This will help keep your log file manageable and improve performance.
+              {(() => {
+                const CLEANUP_STORAGE_KEY = 'quantity_log_last_cleanup'
+                const lastCleanup = localStorage.getItem(CLEANUP_STORAGE_KEY)
+                const THREE_MONTHS_MS = 3 * 30 * 24 * 60 * 60 * 1000 // 3 months in milliseconds
+                const now = Date.now()
+                const isThreeMonthsSinceCleanup = !lastCleanup || (now - parseInt(lastCleanup, 10)) >= THREE_MONTHS_MS
+                
+                return (
+                  <>
+                    {isThreeMonthsSinceCleanup && (
+                      <>
+                        It's been more than 3 months since the last cleanup. Would you like to remove quantity log entries older than 3 months?
+                        <br /><br />
+                      </>
+                    )}
+                    This will help keep your log file manageable and improve performance.
+                  </>
+                )
+              })()}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col sm:flex-row gap-2">

@@ -237,7 +237,7 @@ const ItemForm = ({ item, onClose }) => {
 
           {/* Quick Stock Adjustment - Only show when editing */}
           {isEditing && (
-            <div className="space-y-1.5 sm:space-y-2 p-3 bg-muted/50 rounded-md border">
+            <div className="space-y-1.5 sm:space-y-2 p-3 bg-primary-very-light rounded-md border">
               <Label className="text-sm sm:text-base font-semibold">Quick Stock Adjustment</Label>
               <div className="flex flex-col sm:flex-row gap-2">
                 {/* Add/Subtract Toggle */}
@@ -282,7 +282,7 @@ const ItemForm = ({ item, onClose }) => {
                 {/* Apply Button */}
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="default"
                   onClick={handleStockAdjustment}
                   disabled={!stockAdjustment.amount || parseInt(stockAdjustment.amount || '0', 10) <= 0 || loading}
                   className="whitespace-nowrap"
