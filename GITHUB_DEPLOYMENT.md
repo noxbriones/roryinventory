@@ -3,13 +3,13 @@
 ## ✅ Code Pushed to GitHub
 
 Your code has been successfully pushed to:
-**https://github.com/noxbriones/gsheet_stockinventory**
+**https://github.com/noxbriones/roryinventory**
 
 ## 🚀 Setting Up GitHub Pages
 
 ### Step 1: Enable GitHub Pages
 
-1. Go to your repository: https://github.com/noxbriones/gsheet_stockinventory
+1. Go to your repository: https://github.com/noxbriones/roryinventory
 2. Click on **Settings** → **Pages**
 3. Under **Source**, select **GitHub Actions** (not "Deploy from a branch")
 4. Save the settings
@@ -50,7 +50,7 @@ You need to add your environment variables as GitHub Secrets:
 ### Step 4: Access Your Deployed App
 
 Once deployment completes:
-- Your app will be available at: `https://noxbriones.github.io/gsheet_stockinventory/`
+- Your app will be available at: `https://noxbriones.github.io/roryinventory/`
 - Check the **Actions** tab to see deployment status
 - The workflow will show the deployment URL when complete
 
@@ -72,7 +72,7 @@ Once deployment completes:
 
 4. **Base Path**:
    - The app is configured for GitHub Pages subdirectory deployment
-   - Base path is set to `/gsheet_stockinventory/`
+   - Base path is set to `/roryinventory/`
    - If you change the repository name, update the workflow file
 
 ## 🔍 Troubleshooting

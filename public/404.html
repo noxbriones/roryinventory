@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>RORY Stock Inventory</title>
+    <script>
+      // GitHub Pages SPA routing fix
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      (function() {
+        var path = window.location.pathname;
+        var basePath = '/roryinventory/';
+        
+        // If we're not at the base path, redirect to index.html with the path as a query
+        if (path !== basePath && path !== basePath + 'index.html') {
+          var redirect = basePath + 'index.html' + 
+            (path !== basePath ? '?path=' + encodeURIComponent(path.replace(basePath, '')) : '') + 
+            window.location.search + 
+            window.location.hash;
+          window.location.replace(redirect);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>
+

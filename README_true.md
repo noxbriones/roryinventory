@@ -10,7 +10,6 @@ A React-based single-page application for managing stock inventory using Google 
 - Delete items
 - Search and filter items
 - Stock level tracking with low stock alerts
-- Quantity change history tracking
 
 ## Setup
 
@@ -27,10 +26,9 @@ npm install
      - **Main Sheet** (default: "Sheet1") with the following header row:
        - ID, Name, SKU, Quantity, Price, Category, Description, Low Stock Level, Last Updated
      - **Data Sheet** (default: "Data") with a "Category" column containing all available categories
-     - **Quantity Log Sheet** (default: "QuantityLog") for tracking quantity changes
 
 3. Configure environment variables:
-   - Copy `.env.example` to `.env` (if available, or create manually)
+   - Copy `.env.example` to `.env`
    - Fill in your Google API credentials and Spreadsheet ID
 
 4. Run the development server:
@@ -48,9 +46,7 @@ VITE_GOOGLE_API_KEY=your_api_key_here
 VITE_SPREADSHEET_ID=your_spreadsheet_id_here
 VITE_SHEET_NAME=Sheet1
 VITE_DATA_SHEET_NAME=Data
-VITE_QUANTITY_LOG_SHEET_NAME=QuantityLog
 VITE_LOW_STOCK_THRESHOLD=10
-VITE_BASE_PATH=/roryinventory/
 ```
 
 ## Build
@@ -63,15 +59,6 @@ The build output will be in the `dist` directory, ready for deployment.
 
 ## Deployment
 
-### GitHub Pages Deployment
-
-This project is configured for automatic deployment to GitHub Pages. See [GITHUB_DEPLOYMENT.md](./GITHUB_DEPLOYMENT.md) for detailed instructions.
-
-Quick setup:
-1. Enable GitHub Pages in repository settings (use GitHub Actions)
-2. Add required secrets: `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_API_KEY`, `VITE_SPREADSHEET_ID`
-3. Push to `main` branch or manually trigger the workflow
-
 ### Pre-deployment Checklist
 
 1. **Environment Variables**: Ensure all required environment variables are set in your deployment platform:
@@ -80,9 +67,8 @@ Quick setup:
    - `VITE_SPREADSHEET_ID` (required)
    - `VITE_SHEET_NAME` (optional, default: "Sheet1")
    - `VITE_DATA_SHEET_NAME` (optional, default: "Data")
-   - `VITE_QUANTITY_LOG_SHEET_NAME` (optional, default: "QuantityLog")
    - `VITE_LOW_STOCK_THRESHOLD` (optional, default: 10)
-   - `VITE_BASE_PATH` (optional, for subdirectory deployments)
+   - `VITE_BASE_PATH` (optional, for subdirectory deployments, e.g., "/app/")
 
 2. **Google Cloud Console Configuration**:
    - Add your production domain to authorized JavaScript origins
@@ -94,7 +80,7 @@ Quick setup:
    npm run build
    ```
 
-4. **Deploy the `dist` folder** to your hosting provider
+4. **Deploy the `dist` folder** to your hosting provider (Netlify, Vercel, GitHub Pages, etc.)
 
 ### Common Deployment Platforms
 
@@ -110,20 +96,14 @@ Quick setup:
 - Build command: `npm run build`
 - Output directory: `dist`
 
-#### GitHub Pages
-- See [GITHUB_DEPLOYMENT.md](./GITHUB_DEPLOYMENT.md) for detailed instructions
-- App will be available at: `https://noxbriones.github.io/roryinventory/`
+#### GitHub Pages (Subdirectory)
+- Set `VITE_BASE_PATH=/repository-name/` in your environment variables
+- Build and deploy the `dist` folder contents to the `gh-pages` branch
 
 ### Troubleshooting
 
 - **"Missing required environment variables"**: Check that all required env vars are set in your deployment platform
 - **Google Sign-in not working**: Verify your production domain is added to Google Cloud Console authorized origins
-- **404 errors on refresh**: The `404.html` file handles SPA routing for GitHub Pages
+- **404 errors on refresh**: Configure your hosting provider to serve `index.html` for all routes (SPA routing)
 - **CSP errors**: The Content Security Policy in `index.html` may need adjustment based on your hosting setup
 
-## Documentation
-
-- [GitHub Deployment Guide](./GITHUB_DEPLOYMENT.md) - Detailed GitHub Pages deployment instructions
-- [Setup GitHub Secrets](./SETUP_GITHUB_SECRETS.md) - How to configure GitHub Secrets
-- [Deployment Checklist](./DEPLOYMENT_CHECKLIST.md) - Pre-deployment checklist and fixes
-- [Troubleshooting](./TROUBLESHOOTING.md) - Common issues and solutions

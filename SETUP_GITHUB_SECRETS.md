@@ -13,7 +13,7 @@ It means the GitHub Secrets are not set or are empty.
 
 ### Step 1: Go to Repository Settings
 
-1. Navigate to: https://github.com/noxbriones/gsheet_stockinventory
+1. Navigate to: https://github.com/noxbriones/roryinventory
 2. Click on **Settings** (top menu)
 3. In the left sidebar, click **Secrets and variables** → **Actions**
 
@@ -105,11 +105,11 @@ After setting the secrets:
 - [ ] `VITE_SPREADSHEET_ID` secret added
 - [ ] Workflow triggered (manually or via push)
 - [ ] Build completed successfully
-- [ ] App accessible at: https://noxbriones.github.io/gsheet_stockinventory/
+- [ ] App accessible at: https://noxbriones.github.io/roryinventory/
 
 ## 🔗 Useful Links
 
-- **Repository Settings**: https://github.com/noxbriones/gsheet_stockinventory/settings/secrets/actions
+- **Repository Settings**: https://github.com/noxbriones/roryinventory/settings/secrets/actions
 - **Google Cloud Console**: https://console.cloud.google.com/apis/credentials
-- **Workflow Actions**: https://github.com/noxbriones/gsheet_stockinventory/actions
+- **Workflow Actions**: https://github.com/noxbriones/roryinventory/actions
 
