@@ -6,8 +6,22 @@ import { fileURLToPath } from 'url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+// Plugin to replace base path in HTML for public assets
+const htmlBasePathPlugin = () => {
+  return {
+    name: 'html-base-path',
+    transformIndexHtml(html) {
+      const basePath = process.env.VITE_BASE_PATH || '/'
+      // Replace absolute paths for favicons and other public assets
+      return html
+        .replace(/href="\/favicon/g, `href="${basePath}favicon`)
+        .replace(/href="\/logo/g, `href="${basePath}logo`)
+    }
+  }
+}
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), htmlBasePathPlugin()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
