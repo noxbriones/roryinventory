@@ -2,20 +2,46 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import fs from 'fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-// Plugin to replace base path in HTML for public assets
+// Plugin to replace base path in HTML and manifest for public assets
 const htmlBasePathPlugin = () => {
+  const basePath = process.env.VITE_BASE_PATH || '/'
+  
   return {
     name: 'html-base-path',
     transformIndexHtml(html) {
-      const basePath = process.env.VITE_BASE_PATH || '/'
       // Replace absolute paths for favicons and other public assets
       return html
         .replace(/href="\/favicon/g, `href="${basePath}favicon`)
         .replace(/href="\/logo/g, `href="${basePath}logo`)
+        .replace(/href="\/manifest\.json"/g, `href="${basePath}manifest.json"`)
+    },
+    closeBundle() {
+      // Update manifest.json with base path after build
+      if (basePath !== '/') {
+        const manifestPath = path.resolve(__dirname, 'dist/manifest.json')
+        if (fs.existsSync(manifestPath)) {
+          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'))
+          
+          // Update start_url and scope
+          manifest.start_url = basePath
+          manifest.scope = basePath
+          
+          // Update icon paths
+          if (manifest.icons) {
+            manifest.icons = manifest.icons.map(icon => ({
+              ...icon,
+              src: icon.src.startsWith('/') ? basePath + icon.src.slice(1) : icon.src
+            }))
+          }
+          
+          fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2))
+        }
+      }
     }
   }
 }
