@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
@@ -43,22 +43,13 @@ const getNextDate = (dateString) => {
 const ChangesLog = () => {
   const { openCleanupDialog } = useInventory()
   const [logEntries, setLogEntries] = useState([])
-  const [filteredEntries, setFilteredEntries] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [dateFilter, setDateFilter] = useState(getTodayDate()) // Format: YYYY-MM-DD, defaults to today
   const [itemFilter, setItemFilter] = useState('')
   const [typeFilter, setTypeFilter] = useState('all') // 'all', 'Add', 'Subtract', 'Set'
 
-  useEffect(() => {
-    fetchLogEntries()
-  }, [])
-
-  useEffect(() => {
-    filterEntries()
-  }, [logEntries, dateFilter, itemFilter, typeFilter])
-
-  const fetchLogEntries = async () => {
+  const fetchLogEntries = React.useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
@@ -71,14 +62,19 @@ const ChangesLog = () => {
       })
       setLogEntries(entries)
     } catch (err) {
-      setError('Failed to fetch changes log: ' + err.message)
+      setError('Failed to fetch changes log: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Fetch error:', err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  const filterEntries = () => {
+  useEffect(() => {
+    fetchLogEntries()
+  }, [fetchLogEntries])
+
+  // Optimize filtering with useMemo instead of useEffect
+  const filteredEntries = React.useMemo(() => {
     let filtered = [...logEntries]
 
     // Filter by date
@@ -119,22 +115,22 @@ const ChangesLog = () => {
       })
     }
 
-    setFilteredEntries(filtered)
-  }
+    return filtered
+  }, [logEntries, dateFilter, itemFilter, typeFilter])
 
-  const getChangeIcon = (change) => {
+  const getChangeIcon = useCallback((change) => {
     if (change > 0) return <TrendingUp className="h-4 w-4 text-green-500" />
     if (change < 0) return <TrendingDown className="h-4 w-4 text-red-500" />
     return <Minus className="h-4 w-4 text-muted-foreground" />
-  }
+  }, [])
 
-  const getChangeBadgeVariant = (change) => {
+  const getChangeBadgeVariant = useCallback((change) => {
     if (change > 0) return 'success'
     if (change < 0) return 'destructive'
     return 'secondary'
-  }
+  }, [])
 
-  const formatDate = (timestamp) => {
+  const formatDate = useCallback((timestamp) => {
     if (!timestamp) return '-'
     try {
       const date = new Date(timestamp)
@@ -142,7 +138,7 @@ const ChangesLog = () => {
     } catch {
       return timestamp
     }
-  }
+  }, [])
 
   if (loading && logEntries.length === 0) {
     return (
@@ -353,5 +349,5 @@ const ChangesLog = () => {
   )
 }
 
-export default ChangesLog
+export default React.memo(ChangesLog)
 

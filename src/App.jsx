@@ -1,13 +1,15 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { InventoryProvider } from './context/InventoryContext'
 import ItemList from './components/ItemList'
 import SearchBar from './components/SearchBar'
 import StockAlert from './components/StockAlert'
-import ItemForm from './components/ItemForm'
-import ChangesLog from './components/ChangesLog'
 import { Button } from './components/ui/button'
 import { useInventory } from './context/InventoryContext'
-import { Plus, LogOut, History, Home } from 'lucide-react'
+import { Plus, LogOut, History, Home, Loader2 } from 'lucide-react'
+
+// Lazy load heavy components for better initial load performance
+const ItemForm = lazy(() => import('./components/ItemForm'))
+const ChangesLog = lazy(() => import('./components/ChangesLog'))
 
 function AppContent() {
   const [showForm, setShowForm] = React.useState(false)
@@ -136,15 +138,29 @@ function AppContent() {
             />
           </>
         ) : (
-          <ChangesLog />
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          }>
+            <ChangesLog />
+          </Suspense>
         )}
       </main>
 
       {showForm && (
-        <ItemForm
-          item={editingItem}
-          onClose={handleFormClose}
-        />
+        <Suspense fallback={
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-card rounded-lg p-6">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          </div>
+        }>
+          <ItemForm
+            item={editingItem}
+            onClose={handleFormClose}
+          />
+        </Suspense>
       )}
     </div>
   )

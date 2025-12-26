@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useInventory } from '../context/InventoryContext'
 import { Alert, AlertDescription, AlertTitle } from './ui/alert'
 import { Button } from './ui/button'
@@ -7,6 +7,13 @@ import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react'
 const StockAlert = () => {
   const { lowStockItems } = useInventory()
   const [isCollapsed, setIsCollapsed] = useState(false)
+
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(prev => !prev)
+  }, [])
+
+  const displayedItems = useMemo(() => lowStockItems.slice(0, 5), [lowStockItems])
+  const remainingCount = useMemo(() => Math.max(0, lowStockItems.length - 5), [lowStockItems])
 
   if (lowStockItems.length === 0) {
     return null
@@ -23,7 +30,7 @@ const StockAlert = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={toggleCollapse}
             className="h-6 w-6 p-0 shrink-0"
             aria-label={isCollapsed ? 'Expand alert' : 'Collapse alert'}
           >
@@ -38,7 +45,7 @@ const StockAlert = () => {
           <AlertDescription className="text-sm sm:text-base">
             {lowStockItems.length} item{lowStockItems.length !== 1 ? 's' : ''} {lowStockItems.length === 1 ? 'has' : 'have'} quantity below their low stock threshold:
             <ul className="list-disc list-inside mt-2 space-y-1 text-xs sm:text-sm">
-              {lowStockItems.slice(0, 5).map(item => {
+              {displayedItems.map(item => {
                 const threshold = item.lowStockLevel || 10
                 return (
                   <li key={item.id} className="break-words">
@@ -46,9 +53,9 @@ const StockAlert = () => {
                   </li>
                 )
               })}
-              {lowStockItems.length > 5 && (
+              {remainingCount > 0 && (
                 <li className="text-muted-foreground">
-                  ...and {lowStockItems.length - 5} more
+                  ...and {remainingCount} more
                 </li>
               )}
             </ul>
@@ -59,5 +66,5 @@ const StockAlert = () => {
   )
 }
 
-export default StockAlert
+export default React.memo(StockAlert)
 

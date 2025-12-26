@@ -27,6 +27,7 @@ const ItemForm = ({ item, onClose }) => {
   const [quantityChangeType, setQuantityChangeType] = useState(null) // Track if quick adjustment was used
   const [errors, setErrors] = useState({})
   const [submitError, setSubmitError] = useState(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   const isEditing = !!item
 
@@ -107,9 +108,9 @@ const ItemForm = ({ item, onClose }) => {
       // Reset change type after submission
       setQuantityChangeType(null)
       onClose()
-    } catch (error) {
-      setSubmitError(error.message || 'Failed to save item')
-    }
+      } catch (error) {
+        setSubmitError(error?.message || String(error) || 'Failed to save item')
+      }
   }
 
   const handleChange = (field, value) => {
@@ -182,9 +183,9 @@ const ItemForm = ({ item, onClose }) => {
           await updateItem(item.id, itemData)
           setQuantityChangeType(null)
           onClose()
-        } catch (error) {
-          setSubmitError(error.message || 'Failed to save item')
-        }
+      } catch (error) {
+        setSubmitError(error?.message || String(error) || 'Failed to save item')
+      }
       } else {
         setErrors(validationErrors)
       }
@@ -193,14 +194,17 @@ const ItemForm = ({ item, onClose }) => {
 
   const handleDelete = async () => {
     if (!isEditing) return
-    
-    if (window.confirm(`Are you sure you want to delete "${item.name}"?`)) {
-      try {
-        await deleteItem(item.id)
-        onClose()
-      } catch (error) {
-        setSubmitError(error.message || 'Failed to delete item')
-      }
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDelete = async () => {
+    try {
+      await deleteItem(item.id)
+      setShowDeleteDialog(false)
+      onClose()
+    } catch (error) {
+      setSubmitError(error?.message || String(error) || 'Failed to delete item')
+      setShowDeleteDialog(false)
     }
   }
 
@@ -471,9 +475,47 @@ const ItemForm = ({ item, onClose }) => {
           </DialogFooter>
         </form>
       </DialogContent>
+      
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent onClose={() => setShowDeleteDialog(false)}>
+          <DialogHeader>
+            <DialogTitle>Delete Item</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground mb-4">
+            Are you sure you want to delete "{item?.name || 'this item'}"? This action cannot be undone.
+          </p>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   )
 }
 
-export default ItemForm
+export default React.memo(ItemForm)
 

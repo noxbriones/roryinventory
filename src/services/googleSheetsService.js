@@ -554,7 +554,7 @@ export const getAllItems = async () => {
     // Handle 403 errors specifically
     if (error.status === 403) {
       await handle403Error(error, 'fetching items')
-      return // This will throw, but TypeScript/ESLint might complain without return
+      // handle403Error always throws, so this code is unreachable
     }
     
     // Provide more helpful error messages

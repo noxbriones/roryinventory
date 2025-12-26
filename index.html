@@ -7,6 +7,17 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <!-- COOP removed since we use redirect mode for OAuth, not popups -->
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://apis.google.com https://accounts.google.com; frame-src 'self' https://accounts.google.com https://content-sheets.googleapis.com; connect-src 'self' https://apis.google.com https://sheets.googleapis.com https://accounts.google.com https://*.googleapis.com https://www.google.com https://*.google.com; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https:;" />
+    
+    <!-- Preconnect to Google APIs for faster loading -->
+    <link rel="preconnect" href="https://apis.google.com" crossorigin />
+    <link rel="preconnect" href="https://accounts.google.com" crossorigin />
+    <link rel="dns-prefetch" href="https://sheets.googleapis.com" />
+    <link rel="dns-prefetch" href="https://*.googleapis.com" />
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="/logo.png" as="image" />
+    <link rel="preload" href="/logo-white.png" as="image" />
+    
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

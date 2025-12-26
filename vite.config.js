@@ -42,12 +42,22 @@ export default defineConfig({
     // Copy public folder files to dist root (Vite does this automatically)
     // Files in public/ are copied to dist/ during build
     copyPublicDir: true,
+    // Warn if chunk exceeds 1MB
+    chunkSizeWarningLimit: 1000,
     // Optimize chunk size
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
+          'lucide-icons': ['lucide-react'],
         },
+      },
+    },
+    // Minify for production
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console for debugging, set to true in production if needed
       },
     },
   },

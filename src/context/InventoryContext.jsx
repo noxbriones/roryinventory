@@ -35,7 +35,6 @@ export const useInventory = () => {
 
 export const InventoryProvider = ({ children }) => {
   const [items, setItems] = useState([])
-  const [filteredItems, setFilteredItems] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -90,7 +89,7 @@ export const InventoryProvider = ({ children }) => {
                 fetchCategoriesList()
               ])
             } else {
-              setError('Failed to complete sign in: ' + err.message)
+              setError('Failed to complete sign in: ' + (err?.message || String(err) || 'Unknown error'))
             }
           }
         } else {
@@ -105,15 +104,15 @@ export const InventoryProvider = ({ children }) => {
           }
         }
       } catch (err) {
-        setError('Failed to initialize Google API: ' + err.message)
+        setError('Failed to initialize Google API: ' + (err?.message || String(err) || 'Unknown error'))
         console.error('Initialization error:', err)
       }
     }
     initialize()
   }, [])
 
-  // Filter items based on search and filters
-  useEffect(() => {
+  // Filter items based on search and filters - optimized with useMemo
+  const filteredItems = React.useMemo(() => {
     let filtered = [...items]
 
     // Apply search filter
@@ -145,7 +144,7 @@ export const InventoryProvider = ({ children }) => {
       })
     }
 
-    setFilteredItems(filtered)
+    return filtered
   }, [items, searchQuery, filterCategory, filterStockLevel])
 
   // Fetch all items
@@ -163,7 +162,7 @@ export const InventoryProvider = ({ children }) => {
       const data = await fetchAllItems()
       setItems(data)
     } catch (err) {
-      setError('Failed to fetch items: ' + err.message)
+      setError('Failed to fetch items: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Fetch error:', err)
     } finally {
       setLoading(false)
@@ -202,7 +201,7 @@ export const InventoryProvider = ({ children }) => {
       setItems(prev => [...prev, newItem])
       return newItem
     } catch (err) {
-      setError('Failed to add item: ' + err.message)
+      setError('Failed to add item: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Add error:', err)
       throw err
     } finally {
@@ -221,7 +220,7 @@ export const InventoryProvider = ({ children }) => {
       )
       return updatedItem
     } catch (err) {
-      setError('Failed to update item: ' + err.message)
+      setError('Failed to update item: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Update error:', err)
       throw err
     } finally {
@@ -237,7 +236,7 @@ export const InventoryProvider = ({ children }) => {
       await removeItem(id)
       setItems(prev => prev.filter(i => i.id !== id))
     } catch (err) {
-      setError('Failed to delete item: ' + err.message)
+      setError('Failed to delete item: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Delete error:', err)
       throw err
     } finally {
@@ -255,7 +254,7 @@ export const InventoryProvider = ({ children }) => {
         fetchCategoriesList()
       ])
     } catch (err) {
-      setError('Failed to sign in: ' + err.message)
+      setError('Failed to sign in: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Sign in error:', err)
       throw err
     }
@@ -266,10 +265,9 @@ export const InventoryProvider = ({ children }) => {
       await signOut()
       setIsAuthenticated(false)
       setItems([])
-      setFilteredItems([])
       setCategories([])
     } catch (err) {
-      setError('Failed to sign out: ' + err.message)
+      setError('Failed to sign out: ' + (err?.message || String(err) || 'Unknown error'))
       console.error('Sign out error:', err)
     }
   }, [])
@@ -349,7 +347,7 @@ export const InventoryProvider = ({ children }) => {
     try {
       await runCleanup()
     } catch (error) {
-      setError('Failed to clean up old logs: ' + error.message)
+      setError('Failed to clean up old logs: ' + (error?.message || String(error) || 'Unknown error'))
     }
   }, [runCleanup])
 

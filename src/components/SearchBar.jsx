@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useCallback, useMemo, useState, useEffect } from 'react'
 import { useInventory } from '../context/InventoryContext'
 import { Card, CardContent } from './ui/card'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Select } from './ui/select'
 import { Search, Filter } from 'lucide-react'
+import { debounce } from '../services/requestQueue'
 
 const SearchBar = () => {
   const {
@@ -16,6 +17,36 @@ const SearchBar = () => {
     setFilterCategory,
     setFilterStockLevel
   } = useInventory()
+
+  // Local state for immediate input feedback
+  const [localSearchQuery, setLocalSearchQuery] = useState(searchQuery)
+
+  // Sync local state with context when context changes externally
+  useEffect(() => {
+    setLocalSearchQuery(searchQuery)
+  }, [searchQuery])
+
+  // Debounced search handler - updates context after user stops typing
+  const debouncedSetSearchQuery = useMemo(
+    () => debounce((value) => setSearchQuery(value), 300),
+    [setSearchQuery]
+  )
+
+  const handleSearchChange = useCallback((e) => {
+    const value = e.target.value
+    // Update local state immediately for responsive UI
+    setLocalSearchQuery(value)
+    // Debounce the context update to reduce filtering operations
+    debouncedSetSearchQuery(value)
+  }, [debouncedSetSearchQuery])
+
+  const handleCategoryChange = useCallback((e) => {
+    setFilterCategory(e.target.value)
+  }, [setFilterCategory])
+
+  const handleStockLevelChange = useCallback((e) => {
+    setFilterStockLevel(e.target.value)
+  }, [setFilterStockLevel])
 
   return (
     <Card className="mb-4 sm:mb-6">
@@ -35,8 +66,8 @@ const SearchBar = () => {
                   id="search"
                   type="text"
                   placeholder="Search by name, SKU, or category..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={localSearchQuery}
+                  onChange={handleSearchChange}
                   className="pl-10"
                 />
               </div>
@@ -47,7 +78,7 @@ const SearchBar = () => {
               <Select
                 id="category"
                 value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
+                onChange={handleCategoryChange}
               >
                 <option value="all">All Categories</option>
                 {categories.map(category => (
@@ -63,7 +94,7 @@ const SearchBar = () => {
               <Select
                 id="stockLevel"
                 value={filterStockLevel}
-                onChange={(e) => setFilterStockLevel(e.target.value)}
+                onChange={handleStockLevelChange}
               >
                 <option value="all">All Items</option>
                 <option value="low">Low Stock</option>
@@ -77,5 +108,5 @@ const SearchBar = () => {
   )
 }
 
-export default SearchBar
+export default React.memo(SearchBar)
 

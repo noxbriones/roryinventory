@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { useInventory } from '../context/InventoryContext'
 import ItemCard from './ItemCard'
 import { Card, CardContent } from './ui/card'
@@ -10,6 +10,10 @@ import { Loader2, AlertCircle, Package, Table, LayoutGrid, RefreshCw } from 'luc
 const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
   const { filteredItems, loading, error } = useInventory()
   const [viewMode, setViewMode] = useState('card') // 'card' or 'table'
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode(prev => prev === 'card' ? 'table' : 'card')
+  }, [])
 
   if (loading && filteredItems.length === 0) {
     return (
@@ -66,7 +70,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
             <span className="hidden sm:inline">Refresh</span>
           </Button>
           <Button
-            onClick={() => setViewMode(viewMode === 'card' ? 'table' : 'card')}
+            onClick={toggleViewMode}
             variant="outline"
             size="sm"
           >
@@ -113,17 +117,8 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                   const isLowStock = item.quantity < lowStockThreshold
                   const isOutOfStock = item.quantity === 0
                   
-                  const getStockBadgeVariant = () => {
-                    if (isOutOfStock) return 'destructive'
-                    if (isLowStock) return 'warning'
-                    return 'success'
-                  }
-
-                  const getStockLabel = () => {
-                    if (isOutOfStock) return 'Out of Stock'
-                    if (isLowStock) return 'Low Stock'
-                    return 'In Stock'
-                  }
+                  const stockBadgeVariant = isOutOfStock ? 'destructive' : (isLowStock ? 'warning' : 'success')
+                  const stockLabel = isOutOfStock ? 'Out of Stock' : (isLowStock ? 'Low Stock' : 'In Stock')
 
                   return (
                     <tr
@@ -137,8 +132,8 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                       <td className="px-4 py-3 text-sm">{item.name}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{item.category || '-'}</td>
                       <td className="px-4 py-3 text-sm">
-                        <Badge variant={getStockBadgeVariant()} className="text-xs">
-                          {getStockLabel()}
+                        <Badge variant={stockBadgeVariant} className="text-xs">
+                          {stockLabel}
                         </Badge>
                       </td>
                     </tr>
@@ -153,5 +148,5 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
   )
 }
 
-export default ItemList
+export default React.memo(ItemList)
 
