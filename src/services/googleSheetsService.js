@@ -128,6 +128,11 @@ let oauthCallbackResolve = null
 let oauthCallbackReject = null
 let oauthTimeoutId = null
 
+// Check if Google API scripts are ready (without initializing)
+export const isGoogleAPIReady = () => {
+  return !!(window.google && window.google.accounts && window.gapi)
+}
+
 // Sign in user
 export const signIn = async () => {
   if (!isInitialized) {

@@ -15,7 +15,7 @@ function AppContent() {
   const [showForm, setShowForm] = React.useState(false)
   const [editingItem, setEditingItem] = React.useState(null)
   const [currentPage, setCurrentPage] = React.useState('inventory') // 'inventory' or 'changes'
-  const { isAuthenticated, handleSignIn, handleSignOut, fetchItems, refreshCategories, loading } = useInventory()
+  const { isAuthenticated, handleSignIn, handleSignOut, fetchItems, refreshCategories, loading, isGoogleAPIReady } = useInventory()
 
   const handleAddClick = () => {
     setEditingItem(null)
@@ -53,8 +53,20 @@ function AppContent() {
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-card-foreground">RORY Stock Inventory</h1>
           <p className="text-center text-sm sm:text-base text-muted-foreground mb-6">Sign in with Google to access your inventory</p>
-          <Button onClick={handleSignIn} className="w-full" size="lg">
-            Sign in with Google
+          <Button 
+            onClick={handleSignIn} 
+            className="w-full" 
+            size="lg"
+            disabled={!isGoogleAPIReady}
+          >
+            {!isGoogleAPIReady ? (
+              <>
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                Loading sign-in...
+              </>
+            ) : (
+              'Sign in with Google'
+            )}
           </Button>
         </div>
       </div>

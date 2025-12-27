@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { LOW_STOCK_THRESHOLD } from '../utils/constants'
-import { Package, Tag } from 'lucide-react'
+import { Package, Tag, Calendar } from 'lucide-react'
 
 const ItemCard = ({ item, onEdit }) => {
   const lowStockThreshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
@@ -55,7 +55,7 @@ const ItemCard = ({ item, onEdit }) => {
         <div className="flex items-center gap-3 sm:gap-4 text-sm flex-wrap">
           <div className="flex items-center gap-1.5">
             <Package className={`h-4 w-4 ${iconColor}`} />
-            <span className={`font-semibold ${iconColor}`}>
+            <span className={`text-base font-bold ${iconColor}`}>
               {item.quantity}
             </span>
           </div>
@@ -63,7 +63,19 @@ const ItemCard = ({ item, onEdit }) => {
           {item.category && (
             <div className="flex items-center gap-1.5">
               <Tag className="h-4 w-4 text-muted-foreground" />
-              <span className="text-muted-foreground">{item.category}</span>
+              <span className="text-xs text-muted-foreground">{item.category}</span>
+            </div>
+          )}
+          
+          {item.lastUpdated && (
+            <div className="flex items-center gap-1.5">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {new Date(item.lastUpdated).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric' 
+                })}
+              </span>
             </div>
           )}
           

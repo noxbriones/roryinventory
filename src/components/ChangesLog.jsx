@@ -73,6 +73,22 @@ const ChangesLog = () => {
     fetchLogEntries()
   }, [fetchLogEntries])
 
+  // Calculate entries for the selected date (for total count)
+  const entriesForSelectedDate = React.useMemo(() => {
+    if (!dateFilter) return logEntries
+    
+    const filterDate = new Date(dateFilter)
+    filterDate.setHours(0, 0, 0, 0)
+    const nextDay = new Date(filterDate)
+    nextDay.setDate(nextDay.getDate() + 1)
+
+    return logEntries.filter(entry => {
+      if (!entry.timestamp) return false
+      const entryDate = new Date(entry.timestamp)
+      return entryDate >= filterDate && entryDate < nextDay
+    })
+  }, [logEntries, dateFilter])
+
   // Optimize filtering with useMemo instead of useEffect
   const filteredEntries = React.useMemo(() => {
     let filtered = [...logEntries]
@@ -271,9 +287,25 @@ const ChangesLog = () => {
 
           {/* Results count */}
           <div className="text-sm text-muted-foreground">
-            Showing {filteredEntries.length} of {logEntries.length} change{logEntries.length !== 1 ? 's' : ''}
-            {dateFilter && ` on ${new Date(dateFilter).toLocaleDateString()}`}
-            {typeFilter !== 'all' && ` (Type: ${typeFilter})`}
+            {(() => {
+              // Use date-filtered total when date filter is active, otherwise use all entries
+              const totalForDisplay = dateFilter ? entriesForSelectedDate.length : logEntries.length
+              const isShowingAll = filteredEntries.length === totalForDisplay
+              
+              return isShowingAll ? (
+                <>
+                  {filteredEntries.length} change{filteredEntries.length !== 1 ? 's' : ''}
+                  {dateFilter && ` on ${new Date(dateFilter).toLocaleDateString()}`}
+                  {typeFilter !== 'all' && ` (Type: ${typeFilter})`}
+                </>
+              ) : (
+                <>
+                  Showing {filteredEntries.length} of {totalForDisplay} change{totalForDisplay !== 1 ? 's' : ''}
+                  {dateFilter && ` on ${new Date(dateFilter).toLocaleDateString()}`}
+                  {typeFilter !== 'all' && ` (Type: ${typeFilter})`}
+                </>
+              )
+            })()}
           </div>
 
           {/* Log entries table */}

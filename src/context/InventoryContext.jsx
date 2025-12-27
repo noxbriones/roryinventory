@@ -4,6 +4,7 @@ import {
   signIn,
   signOut,
   checkSignedIn,
+  isGoogleAPIReady,
   getAllItems as fetchAllItems,
   getCategories as fetchCategories,
   addItem as createItem,
@@ -44,10 +45,40 @@ export const InventoryProvider = ({ children }) => {
   const [filterStockLevel, setFilterStockLevel] = useState('all')
   const [showCleanupDialog, setShowCleanupDialog] = useState(false)
   const [cleanupLoading, setCleanupLoading] = useState(false)
+  const [isGoogleAPIReadyState, setIsGoogleAPIReadyState] = useState(false)
   
   // Refs to prevent concurrent API calls
   const fetchingItemsRef = useRef(false)
   const fetchingCategoriesRef = useRef(false)
+
+  // Check Google API script readiness
+  useEffect(() => {
+    const checkReadiness = () => {
+      if (isGoogleAPIReady()) {
+        setIsGoogleAPIReadyState(true)
+        return
+      }
+      
+      // Poll for script readiness
+      const checkInterval = setInterval(() => {
+        if (isGoogleAPIReady()) {
+          setIsGoogleAPIReadyState(true)
+          clearInterval(checkInterval)
+        }
+      }, 100)
+      
+      // Stop checking after 10 seconds
+      setTimeout(() => {
+        clearInterval(checkInterval)
+        // Even if not ready, allow user to try (scripts will load on demand)
+        setIsGoogleAPIReadyState(true)
+      }, 10000)
+      
+      return () => clearInterval(checkInterval)
+    }
+    
+    checkReadiness()
+  }, [])
 
   // Initialize Google API on mount
   useEffect(() => {
@@ -389,7 +420,8 @@ export const InventoryProvider = ({ children }) => {
     setFilterStockLevel,
     handleSignIn,
     handleSignOut,
-    openCleanupDialog
+    openCleanupDialog,
+    isGoogleAPIReady: isGoogleAPIReadyState
   }
 
   return (
