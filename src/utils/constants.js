@@ -36,7 +36,8 @@ export const COLUMNS = {
   CATEGORY: 5,
   DESCRIPTION: 6,
   LOW_STOCK_LEVEL: 7,
-  LAST_UPDATED: 8
+  TYPE: 8,
+  LAST_UPDATED: 9
 }
 
 // Column names for header row
@@ -49,6 +50,7 @@ export const COLUMN_NAMES = [
   'Category',
   'Description',
   'Low Stock Level',
+  'Type',
   'Last Updated'
 ]
 

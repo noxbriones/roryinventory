@@ -534,13 +534,13 @@ export const getAllItems = async () => {
 
     const response = await makeAuthenticatedRequest(() => gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A2:I` // Skip header row
+      range: `${SHEET_NAME}!A2:J` // Skip header row, now includes Type column
     }), { priority: 1, retries: 0 })
 
     const rows = response.result.values || []
     return rows.map((row, index) => {
       // Ensure row has all columns, fill with empty strings if missing
-      const fullRow = [...row, ...Array(9 - row.length).fill('')]
+      const fullRow = [...row, ...Array(10 - row.length).fill('')]
       return {
         id: fullRow[COLUMNS.ID] || `row_${index + 2}`,
         name: fullRow[COLUMNS.NAME] || '',
@@ -550,6 +550,7 @@ export const getAllItems = async () => {
         category: fullRow[COLUMNS.CATEGORY] || '',
         description: fullRow[COLUMNS.DESCRIPTION] || '',
         lowStockLevel: parseInt(fullRow[COLUMNS.LOW_STOCK_LEVEL] || LOW_STOCK_THRESHOLD.toString(), 10),
+        type: fullRow[COLUMNS.TYPE] || '',
         lastUpdated: fullRow[COLUMNS.LAST_UPDATED] || ''
       }
     })
@@ -642,6 +643,55 @@ export const getCategories = async () => {
   }
 }
 
+// Get types from Data sheet
+export const getTypes = async () => {
+  await ensureSignedIn()
+  validateSpreadsheetId()
+
+  try {
+    // First, get the Data sheet to find the type column
+    const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${DATA_SHEET_NAME}!A1:ZZ1` // Get header row to find type column
+    }), { priority: 2 })
+
+    const headers = response.result.values?.[0] || []
+    const typeColumnIndex = headers.findIndex(
+      header => header && header.toString().toLowerCase().trim() === 'type'
+    )
+
+    if (typeColumnIndex === -1) {
+      console.warn('Type column not found in Data sheet')
+      return []
+    }
+
+    // Convert column index to letter
+    const columnLetter = columnIndexToLetter(typeColumnIndex)
+
+    // Get all type values (skip header row)
+    const typeResponse = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${DATA_SHEET_NAME}!${columnLetter}2:${columnLetter}` // Skip header, get all rows
+    }), { priority: 2 })
+
+    const typeRows = typeResponse.result.values || []
+    
+    // Extract unique, non-empty types and sort them
+    const types = new Set()
+    typeRows.forEach(row => {
+      if (row && row[0] && row[0].toString().trim()) {
+        types.add(row[0].toString().trim())
+      }
+    })
+
+    return Array.from(types).sort()
+  } catch (error) {
+    console.error('Error fetching types:', error)
+    // Return empty array if Data sheet doesn't exist or has errors
+    return []
+  }
+}
+
 // Add new item to spreadsheet
 export const addItem = async (item) => {
   await ensureSignedIn()
@@ -665,6 +715,7 @@ export const addItem = async (item) => {
         item.category || '',
         item.description || '',
         item.lowStockLevel?.toString() || LOW_STOCK_THRESHOLD.toString(),
+        item.type || '',
         now
       ]
     ]
@@ -718,13 +769,14 @@ export const updateItem = async (id, item) => {
         item.category || '',
         item.description || '',
         item.lowStockLevel?.toString() || LOW_STOCK_THRESHOLD.toString(),
+        item.type || '',
         now
       ]
     ]
 
     await queueRequest(() => gapi.client.sheets.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A${rowNumber}:I${rowNumber}`,
+      range: `${SHEET_NAME}!A${rowNumber}:J${rowNumber}`,
       valueInputOption: 'USER_ENTERED',
       resource: {
         values
@@ -846,7 +898,7 @@ const ensureHeaderRow = async () => {
   try {
     const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A1:I1`
+      range: `${SHEET_NAME}!A1:J1`
     }), { priority: 1, retries: 2 })
 
     const headers = response.result.values?.[0] || []
@@ -855,7 +907,7 @@ const ensureHeaderRow = async () => {
     if (headers.length < COLUMN_NAMES.length || !headers.every((h, i) => h === COLUMN_NAMES[i])) {
       await queueRequest(() => gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A1:I1`,
+        range: `${SHEET_NAME}!A1:J1`,
         valueInputOption: 'RAW',
         resource: {
           values: [COLUMN_NAMES]
@@ -867,7 +919,7 @@ const ensureHeaderRow = async () => {
     if (error.status === 400) {
       await queueRequest(() => gapi.client.sheets.spreadsheets.values.update({
         spreadsheetId: SPREADSHEET_ID,
-        range: `${SHEET_NAME}!A1:I1`,
+        range: `${SHEET_NAME}!A1:J1`,
         valueInputOption: 'RAW',
         resource: {
           values: [COLUMN_NAMES]

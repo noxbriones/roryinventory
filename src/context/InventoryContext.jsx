@@ -7,6 +7,7 @@ import {
   isGoogleAPIReady,
   getAllItems as fetchAllItems,
   getCategories as fetchCategories,
+  getTypes as fetchTypes,
   addItem as createItem,
   updateItem as modifyItem,
   deleteItem as removeItem,
@@ -37,11 +38,13 @@ export const useInventory = () => {
 export const InventoryProvider = ({ children }) => {
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState([])
+  const [types, setTypes] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
+  const [filterType, setFilterType] = useState('all')
   const [filterStockLevel, setFilterStockLevel] = useState('all')
   const [showCleanupDialog, setShowCleanupDialog] = useState(false)
   const [cleanupLoading, setCleanupLoading] = useState(false)
@@ -50,6 +53,7 @@ export const InventoryProvider = ({ children }) => {
   // Refs to prevent concurrent API calls
   const fetchingItemsRef = useRef(false)
   const fetchingCategoriesRef = useRef(false)
+  const fetchingTypesRef = useRef(false)
 
   // Check Google API script readiness
   useEffect(() => {
@@ -108,7 +112,8 @@ export const InventoryProvider = ({ children }) => {
             setIsAuthenticated(true)
             await Promise.all([
               fetchItems(),
-              fetchCategoriesList()
+              fetchCategoriesList(),
+              fetchTypesList()
             ])
           } catch (err) {
             // If sign in fails, check if already signed in
@@ -117,7 +122,8 @@ export const InventoryProvider = ({ children }) => {
             if (signedIn) {
               await Promise.all([
                 fetchItems(),
-                fetchCategoriesList()
+                fetchCategoriesList(),
+                fetchTypesList()
               ])
             } else {
               setError('Failed to complete sign in: ' + (err?.message || String(err) || 'Unknown error'))
@@ -130,7 +136,8 @@ export const InventoryProvider = ({ children }) => {
           if (signedIn) {
             await Promise.all([
               fetchItems(),
-              fetchCategoriesList()
+              fetchCategoriesList(),
+              fetchTypesList()
             ])
           }
         }
@@ -162,6 +169,11 @@ export const InventoryProvider = ({ children }) => {
       filtered = filtered.filter(item => item.category === filterCategory)
     }
 
+    // Apply type filter
+    if (filterType !== 'all') {
+      filtered = filtered.filter(item => (item.type || '') === filterType)
+    }
+
     // Apply stock level filter
     if (filterStockLevel === 'low') {
       filtered = filtered.filter(item => {
@@ -176,7 +188,7 @@ export const InventoryProvider = ({ children }) => {
     }
 
     return filtered
-  }, [items, searchQuery, filterCategory, filterStockLevel])
+  }, [items, searchQuery, filterCategory, filterType, filterStockLevel])
 
   // Fetch all items
   const fetchItems = useCallback(async () => {
@@ -220,6 +232,28 @@ export const InventoryProvider = ({ children }) => {
       setCategories([])
     } finally {
       fetchingCategoriesRef.current = false
+    }
+  }, [])
+
+  // Fetch types from Data sheet
+  const fetchTypesList = useCallback(async () => {
+    // Prevent concurrent calls
+    if (fetchingTypesRef.current) {
+      console.log('Types fetch already in progress, skipping...')
+      return
+    }
+    
+    fetchingTypesRef.current = true
+    try {
+      const data = await fetchTypes()
+      setTypes(data)
+    } catch (err) {
+      console.error('Failed to fetch types:', err)
+      // Don't set error state for types, just log it
+      // Fallback to empty array
+      setTypes([])
+    } finally {
+      fetchingTypesRef.current = false
     }
   }, [])
 
@@ -282,7 +316,8 @@ export const InventoryProvider = ({ children }) => {
       setIsAuthenticated(true)
       await Promise.all([
         fetchItems(),
-        fetchCategoriesList()
+        fetchCategoriesList(),
+        fetchTypesList()
       ])
     } catch (err) {
       setError('Failed to sign in: ' + (err?.message || String(err) || 'Unknown error'))
@@ -407,8 +442,10 @@ export const InventoryProvider = ({ children }) => {
     isAuthenticated,
     searchQuery,
     filterCategory,
+    filterType,
     filterStockLevel,
     categories,
+    types,
     lowStockItems,
     fetchItems,
     addItem,
@@ -417,6 +454,7 @@ export const InventoryProvider = ({ children }) => {
     refreshCategories,
     setSearchQuery,
     setFilterCategory,
+    setFilterType,
     setFilterStockLevel,
     handleSignIn,
     handleSignOut,

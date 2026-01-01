@@ -11,10 +11,13 @@ const SearchBar = () => {
   const {
     searchQuery,
     filterCategory,
+    filterType,
     filterStockLevel,
     categories,
+    types,
     setSearchQuery,
     setFilterCategory,
+    setFilterType,
     setFilterStockLevel
   } = useInventory()
 
@@ -43,6 +46,10 @@ const SearchBar = () => {
   const handleCategoryChange = useCallback((e) => {
     setFilterCategory(e.target.value)
   }, [setFilterCategory])
+
+  const handleTypeChange = useCallback((e) => {
+    setFilterType(e.target.value)
+  }, [setFilterType])
 
   const handleStockLevelChange = useCallback((e) => {
     setFilterStockLevel(e.target.value)
@@ -99,6 +106,22 @@ const SearchBar = () => {
                 <option value="all">All Items</option>
                 <option value="low">Low Stock</option>
                 <option value="in-stock">In Stock</option>
+              </Select>
+            </div>
+
+            <div className="space-y-2 flex-[1_1_0%] min-w-0">
+              <Label htmlFor="type">Type</Label>
+              <Select
+                id="type"
+                value={filterType}
+                onChange={handleTypeChange}
+              >
+                <option value="all">All Types</option>
+                {types.map(type => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
               </Select>
             </div>
           </div>
