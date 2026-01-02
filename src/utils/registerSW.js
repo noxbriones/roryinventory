@@ -9,10 +9,17 @@ export function registerServiceWorker() {
         .then((registration) => {
           console.log('Service Worker registered successfully:', registration.scope)
 
-          // Check for updates periodically
+          // Check for updates more frequently (every 5 minutes)
           setInterval(() => {
             registration.update()
-          }, 60 * 60 * 1000) // Check every hour
+          }, 5 * 60 * 1000) // Check every 5 minutes
+
+          // Also check on page focus (when user returns to tab)
+          document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+              registration.update()
+            }
+          })
 
           // Handle updates
           registration.addEventListener('updatefound', () => {
@@ -21,11 +28,23 @@ export function registerServiceWorker() {
               newWorker.addEventListener('statechange', () => {
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                   // New service worker available
-                  console.log('New service worker available')
-                  // Optionally show a notification to the user
+                  console.log('New service worker available, reloading...')
+                  // Auto-reload after a short delay to allow user to see the change
+                  setTimeout(() => {
+                    window.location.reload()
+                  }, 1000)
+                } else if (newWorker.state === 'activated' && navigator.serviceWorker.controller) {
+                  // Service worker activated, reload to get new version
+                  window.location.reload()
                 }
               })
             }
+          })
+
+          // Listen for controller change (when new SW takes control)
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            console.log('Service worker controller changed, reloading...')
+            window.location.reload()
           })
         })
         .catch((error) => {

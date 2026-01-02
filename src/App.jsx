@@ -5,7 +5,7 @@ import SearchBar from './components/SearchBar'
 import StockAlert from './components/StockAlert'
 import { Button } from './components/ui/button'
 import { useInventory } from './context/InventoryContext'
-import { Plus, LogOut, History, Home, Loader2 } from 'lucide-react'
+import { Plus, LogOut, History, Home, Loader2, RefreshCw } from 'lucide-react'
 
 // Lazy load heavy components for better initial load performance
 const ItemForm = lazy(() => import('./components/ItemForm'))
@@ -41,6 +41,30 @@ function AppContent() {
     } catch (error) {
       // Error is handled by context
       console.error('Refresh error:', error)
+    }
+  }
+
+  const handleHardRefresh = () => {
+    // Unregister service worker and clear caches, then reload
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        registrations.forEach((registration) => {
+          registration.unregister()
+        })
+        // Clear all caches
+        if ('caches' in window) {
+          caches.keys().then((cacheNames) => {
+            cacheNames.forEach((cacheName) => {
+              caches.delete(cacheName)
+            })
+            window.location.reload()
+          })
+        } else {
+          window.location.reload()
+        }
+      })
+    } else {
+      window.location.reload()
     }
   }
 
@@ -123,6 +147,16 @@ function AppContent() {
                   <span className="hidden sm:inline">Home</span>
                 </Button>
               )}
+              <Button 
+                onClick={handleHardRefresh} 
+                variant="outline" 
+                className="bg-white/10 hover:bg-white/20 border-white/20 text-white flex-1 sm:flex-none text-sm sm:text-base"
+                size="sm"
+                title="Hard Refresh (Clear Cache)"
+              >
+                <RefreshCw className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Refresh</span>
+              </Button>
               <Button 
                 onClick={handleSignOut} 
                 variant="outline" 
