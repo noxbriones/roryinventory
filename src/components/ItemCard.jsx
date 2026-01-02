@@ -6,6 +6,8 @@ import { Package, Tag, Calendar } from 'lucide-react'
 
 const ItemCard = ({ item, onEdit, showCheckbox = false }) => {
   const isNonLocal = item.type === 'Non-local'
+  const isBoth = item.type === 'Both'
+  const showCheckboxForItem = isNonLocal || isBoth
   const [isChecked, setIsChecked] = useState(false)
   const lowStockThreshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
   const isLowStock = item.quantity < lowStockThreshold
@@ -46,11 +48,11 @@ const ItemCard = ({ item, onEdit, showCheckbox = false }) => {
   }, [])
 
   return (
-    <Card className={`${borderColor} border-l-4 ${showCheckbox && isNonLocal && isChecked ? 'opacity-30' : ''}`}>
+    <Card className={`${borderColor} border-l-4 ${showCheckbox && showCheckboxForItem && isChecked ? 'opacity-30' : ''}`}>
       <CardHeader className="!px-4 sm:!px-6 !pt-4 sm:!pt-6 !pb-0">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
           <div className="flex items-start gap-2 flex-1">
-            {showCheckbox && isNonLocal && (
+            {showCheckbox && showCheckboxForItem && (
               <input
                 type="checkbox"
                 checked={isChecked}

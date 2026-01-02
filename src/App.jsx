@@ -5,7 +5,7 @@ import SearchBar from './components/SearchBar'
 import StockAlert from './components/StockAlert'
 import { Button } from './components/ui/button'
 import { useInventory } from './context/InventoryContext'
-import { Plus, LogOut, History, Home, Loader2, RefreshCw } from 'lucide-react'
+import { Plus, LogOut, History, Home, Loader2, RefreshCw, Repeat2 } from 'lucide-react'
 
 // Lazy load heavy components for better initial load performance
 const ItemForm = lazy(() => import('./components/ItemForm'))
@@ -154,8 +154,8 @@ function AppContent() {
                 size="sm"
                 title="Hard Refresh (Clear Cache)"
               >
-                <RefreshCw className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Refresh</span>
+                <Repeat2 className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Reload</span>
               </Button>
               <Button 
                 onClick={handleSignOut} 

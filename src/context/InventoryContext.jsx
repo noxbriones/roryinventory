@@ -176,7 +176,15 @@ export const InventoryProvider = ({ children }) => {
 
     // Apply type filter
     if (filterType !== 'all') {
-      filtered = filtered.filter(item => (item.type || '') === filterType)
+      filtered = filtered.filter(item => {
+        const itemType = item.type || ''
+        // If filtering by Local or Non-local, also include items with type "Both"
+        if (filterType === 'Local' || filterType === 'Non-local') {
+          return itemType === filterType || itemType === 'Both'
+        }
+        // Otherwise, exact match
+        return itemType === filterType
+      })
     }
 
     // Apply stock level filter

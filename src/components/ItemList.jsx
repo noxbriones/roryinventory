@@ -109,7 +109,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
               key={item.id}
               item={item}
               onEdit={onEdit}
-              showCheckbox={filterType === 'Non-local'}
+              showCheckbox={filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both'}
             />
           ))}
         </div>
@@ -119,7 +119,8 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  {filterType === 'Non-local' && filteredItems.some(item => item.type === 'Non-local') && (
+                  {(filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both') && 
+                   filteredItems.some(item => item.type === 'Non-local' || item.type === 'Both') && (
                     <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-12"></th>
                   )}
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
@@ -137,6 +138,8 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                   const isLowStock = item.quantity < lowStockThreshold
                   const isOutOfStock = item.quantity === 0
                   const isNonLocal = item.type === 'Non-local'
+                  const isBoth = item.type === 'Both'
+                  const showCheckboxForItem = isNonLocal || isBoth
                   const isChecked = checkedItems.has(item.id)
                   
                   const stockBadgeVariant = isOutOfStock ? 'destructive' : (isLowStock ? 'warning' : 'success')
@@ -148,14 +151,15 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                       onClick={() => onEdit(item)}
                       className={`cursor-pointer hover:bg-primary/10 transition-colors ${
                         index !== filteredItems.length - 1 ? 'border-b' : ''
-                      } ${filterType === 'Non-local' && isNonLocal && isChecked ? 'opacity-30' : ''}`}
+                      } ${(filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both') && showCheckboxForItem && isChecked ? 'opacity-30' : ''}`}
                     >
-                      {filterType === 'Non-local' && filteredItems.some(i => i.type === 'Non-local') && (
+                      {(filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both') && 
+                       filteredItems.some(i => i.type === 'Non-local' || i.type === 'Both') && (
                         <td 
                           className="px-4 py-3"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {isNonLocal ? (
+                          {showCheckboxForItem ? (
                             <input
                               type="checkbox"
                               checked={isChecked}

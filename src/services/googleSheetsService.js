@@ -715,8 +715,8 @@ export const addItem = async (item) => {
         item.category || '',
         item.description || '',
         item.lowStockLevel?.toString() || LOW_STOCK_THRESHOLD.toString(),
-        item.type || '',
-        now
+        item.type || '',  // Type column (index 8)
+        now  // Date goes to Last Updated column (index 9)
       ]
     ]
 
@@ -759,6 +759,9 @@ export const updateItem = async (id, item) => {
     const rowNumber = itemIndex + 2
     const now = new Date().toISOString()
 
+    // Preserve existing type value if not provided in update
+    const typeValue = item.type !== undefined ? item.type : (oldItem.type || '')
+
     const values = [
       [
         id,
@@ -769,8 +772,8 @@ export const updateItem = async (id, item) => {
         item.category || '',
         item.description || '',
         item.lowStockLevel?.toString() || LOW_STOCK_THRESHOLD.toString(),
-        item.type || '',
-        now
+        typeValue,  // Use preserved type value
+        now  // Date goes to Last Updated column (index 9)
       ]
     ]
 
