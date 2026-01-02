@@ -348,9 +348,13 @@ export const InventoryProvider = ({ children }) => {
     await fetchCategoriesList()
   }, [fetchCategoriesList])
 
-  // Get low stock items
+  // Get low stock items (excluding Discontinued items)
   const lowStockItems = React.useMemo(() => {
     return items.filter(item => {
+      // Exclude Discontinued items
+      if (item.category === 'Discontinued') {
+        return false
+      }
       const threshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
       return item.quantity < threshold
     })

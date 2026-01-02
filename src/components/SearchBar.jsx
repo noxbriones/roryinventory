@@ -4,7 +4,8 @@ import { Card, CardContent } from './ui/card'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Select } from './ui/select'
-import { Search, Filter } from 'lucide-react'
+import { Button } from './ui/button'
+import { Search, Filter, X } from 'lucide-react'
 import { debounce } from '../services/requestQueue'
 
 const SearchBar = () => {
@@ -55,13 +56,41 @@ const SearchBar = () => {
     setFilterStockLevel(e.target.value)
   }, [setFilterStockLevel])
 
+  const handleClear = useCallback(() => {
+    setSearchQuery('')
+    setLocalSearchQuery('')
+    setFilterCategory('all')
+    setFilterType('all')
+    setFilterStockLevel('all')
+  }, [setSearchQuery, setFilterCategory, setFilterType, setFilterStockLevel])
+
+  const hasActiveFilters = useMemo(() => {
+    return searchQuery.trim() !== '' || 
+           filterCategory !== 'all' || 
+           filterType !== 'all' || 
+           filterStockLevel !== 'all'
+  }, [searchQuery, filterCategory, filterType, filterStockLevel])
+
   return (
     <Card className="mb-4 sm:mb-6">
       <CardContent className="pt-4 sm:pt-6 p-4 sm:p-6">
         <div className="space-y-3 sm:space-y-4">
-          <div className="flex items-center gap-2 mb-3 sm:mb-4">
-            <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
-            <h3 className="text-base sm:text-lg font-semibold">Search & Filter</h3>
+          <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground" />
+              <h3 className="text-base sm:text-lg font-semibold">Search & Filter</h3>
+            </div>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleClear}
+                className="h-8 px-3 text-xs sm:text-sm"
+              >
+                <X className="h-3 w-3 sm:h-4 sm:w-4 mr-1.5" />
+                Clear
+              </Button>
+            )}
           </div>
           
           <div className="flex flex-row gap-3 sm:gap-4">
