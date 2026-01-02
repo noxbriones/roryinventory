@@ -1,10 +1,12 @@
-import React, { useMemo, useCallback } from 'react'
+import React, { useMemo, useCallback, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { LOW_STOCK_THRESHOLD } from '../utils/constants'
 import { Package, Tag, Calendar } from 'lucide-react'
 
 const ItemCard = ({ item, onEdit }) => {
+  const isNonLocal = item.type === 'Non-local'
+  const [isChecked, setIsChecked] = useState(false)
   const lowStockThreshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
   const isLowStock = item.quantity < lowStockThreshold
   const isOutOfStock = item.quantity === 0
@@ -38,16 +40,32 @@ const ItemCard = ({ item, onEdit }) => {
     return 'text-green-500'
   }, [isOutOfStock, isLowStock])
 
+  const handleCheckboxChange = useCallback((e) => {
+    e.stopPropagation()
+    setIsChecked(e.target.checked)
+  }, [])
+
   return (
-    <Card className={`${borderColor} border-l-4`}>
+    <Card className={`${borderColor} border-l-4 ${isNonLocal && isChecked ? 'opacity-30' : ''}`}>
       <CardHeader className="!px-4 sm:!px-6 !pt-4 sm:!pt-6 !pb-0">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
-          <CardTitle 
-            className="text-lg sm:text-xl break-words pr-2 cursor-pointer hover:text-primary transition-colors"
-            onClick={handleEdit}
-          >
-            {item.name}
-          </CardTitle>
+          <div className="flex items-start gap-2 flex-1">
+            {isNonLocal && (
+              <input
+                type="checkbox"
+                checked={isChecked}
+                onChange={handleCheckboxChange}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 h-4 w-4 cursor-pointer"
+              />
+            )}
+            <CardTitle 
+              className="text-lg sm:text-xl break-words pr-2 cursor-pointer hover:text-primary transition-colors flex-1"
+              onClick={handleEdit}
+            >
+              {item.name}
+            </CardTitle>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-2 sm:space-y-3 p-4 sm:p-6 pt-0">

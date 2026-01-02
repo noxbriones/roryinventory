@@ -10,9 +10,22 @@ import { Loader2, AlertCircle, Package, Table, LayoutGrid, RefreshCw } from 'luc
 const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
   const { filteredItems, loading, error } = useInventory()
   const [viewMode, setViewMode] = useState('card') // 'card' or 'table'
+  const [checkedItems, setCheckedItems] = useState(new Set()) // Track checked items by ID
 
   const toggleViewMode = useCallback(() => {
     setViewMode(prev => prev === 'card' ? 'table' : 'card')
+  }, [])
+
+  const handleCheckboxChange = useCallback((itemId, checked) => {
+    setCheckedItems(prev => {
+      const newSet = new Set(prev)
+      if (checked) {
+        newSet.add(itemId)
+      } else {
+        newSet.delete(itemId)
+      }
+      return newSet
+    })
   }, [])
 
   if (loading && filteredItems.length === 0) {
@@ -105,6 +118,9 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
+                  {filteredItems.some(item => item.type === 'Non-local') && (
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-12"></th>
+                  )}
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Quantity</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Name</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Category</th>
@@ -116,6 +132,8 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                   const lowStockThreshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
                   const isLowStock = item.quantity < lowStockThreshold
                   const isOutOfStock = item.quantity === 0
+                  const isNonLocal = item.type === 'Non-local'
+                  const isChecked = checkedItems.has(item.id)
                   
                   const stockBadgeVariant = isOutOfStock ? 'destructive' : (isLowStock ? 'warning' : 'success')
                   const stockLabel = isOutOfStock ? 'Out of Stock' : (isLowStock ? 'Low Stock' : 'In Stock')
@@ -126,10 +144,26 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                       onClick={() => onEdit(item)}
                       className={`cursor-pointer hover:bg-primary/10 transition-colors ${
                         index !== filteredItems.length - 1 ? 'border-b' : ''
-                      }`}
+                      } ${isNonLocal && isChecked ? 'opacity-30' : ''}`}
                     >
+                      {filteredItems.some(i => i.type === 'Non-local') && (
+                        <td 
+                          className="px-4 py-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {isNonLocal ? (
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-4 w-4 cursor-pointer"
+                            />
+                          ) : null}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-sm font-medium">{item.quantity}</td>
-                      <td className="px-4 py-3 text-sm">{item.name}</td>
+                      <td className="px-4 py-3 text-base">{item.name}</td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">{item.category || '-'}</td>
                       <td className="px-4 py-3 text-sm">
                         <Badge variant={stockBadgeVariant} className="text-xs">
