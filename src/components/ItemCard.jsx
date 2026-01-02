@@ -4,7 +4,7 @@ import { Badge } from './ui/badge'
 import { LOW_STOCK_THRESHOLD } from '../utils/constants'
 import { Package, Tag, Calendar } from 'lucide-react'
 
-const ItemCard = ({ item, onEdit }) => {
+const ItemCard = ({ item, onEdit, showCheckbox = false }) => {
   const isNonLocal = item.type === 'Non-local'
   const [isChecked, setIsChecked] = useState(false)
   const lowStockThreshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
@@ -46,17 +46,17 @@ const ItemCard = ({ item, onEdit }) => {
   }, [])
 
   return (
-    <Card className={`${borderColor} border-l-4 ${isNonLocal && isChecked ? 'opacity-30' : ''}`}>
+    <Card className={`${borderColor} border-l-4 ${showCheckbox && isNonLocal && isChecked ? 'opacity-30' : ''}`}>
       <CardHeader className="!px-4 sm:!px-6 !pt-4 sm:!pt-6 !pb-0">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0">
           <div className="flex items-start gap-2 flex-1">
-            {isNonLocal && (
+            {showCheckbox && isNonLocal && (
               <input
                 type="checkbox"
                 checked={isChecked}
                 onChange={handleCheckboxChange}
                 onClick={(e) => e.stopPropagation()}
-                className="mt-1 h-4 w-4 cursor-pointer"
+                className="mt-1 h-4 w-4 cursor-pointer accent-green-600"
               />
             )}
             <CardTitle 

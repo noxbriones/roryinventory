@@ -8,7 +8,7 @@ import { LOW_STOCK_THRESHOLD } from '../utils/constants'
 import { Loader2, AlertCircle, Package, Table, LayoutGrid, RefreshCw } from 'lucide-react'
 
 const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
-  const { filteredItems, loading, error } = useInventory()
+  const { filteredItems, loading, error, filterType } = useInventory()
   const [viewMode, setViewMode] = useState('card') // 'card' or 'table'
   const [checkedItems, setCheckedItems] = useState(new Set()) // Track checked items by ID
 
@@ -109,6 +109,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
               key={item.id}
               item={item}
               onEdit={onEdit}
+              showCheckbox={filterType === 'Non-local'}
             />
           ))}
         </div>
@@ -118,10 +119,13 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
             <table className="w-full">
               <thead className="bg-muted/50">
                 <tr>
-                  {filteredItems.some(item => item.type === 'Non-local') && (
+                  {filterType === 'Non-local' && filteredItems.some(item => item.type === 'Non-local') && (
                     <th className="px-4 py-3 text-left text-sm font-semibold text-foreground w-12"></th>
                   )}
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Quantity</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">
+                    <span className="sm:hidden">Qty</span>
+                    <span className="hidden sm:inline">Quantity</span>
+                  </th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Name</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Category</th>
                   <th className="px-4 py-3 text-left text-sm font-semibold text-foreground">Status</th>
@@ -144,9 +148,9 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                       onClick={() => onEdit(item)}
                       className={`cursor-pointer hover:bg-primary/10 transition-colors ${
                         index !== filteredItems.length - 1 ? 'border-b' : ''
-                      } ${isNonLocal && isChecked ? 'opacity-30' : ''}`}
+                      } ${filterType === 'Non-local' && isNonLocal && isChecked ? 'opacity-30' : ''}`}
                     >
-                      {filteredItems.some(i => i.type === 'Non-local') && (
+                      {filterType === 'Non-local' && filteredItems.some(i => i.type === 'Non-local') && (
                         <td 
                           className="px-4 py-3"
                           onClick={(e) => e.stopPropagation()}
@@ -157,7 +161,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                               checked={isChecked}
                               onChange={(e) => handleCheckboxChange(item.id, e.target.checked)}
                               onClick={(e) => e.stopPropagation()}
-                              className="h-4 w-4 cursor-pointer"
+                              className="h-4 w-4 cursor-pointer accent-green-600"
                             />
                           ) : null}
                         </td>

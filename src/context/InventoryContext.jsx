@@ -153,6 +153,11 @@ export const InventoryProvider = ({ children }) => {
   const filteredItems = React.useMemo(() => {
     let filtered = [...items]
 
+    // Hide Discontinued items by default, unless category filter is specifically set to Discontinued
+    if (filterCategory !== 'Discontinued') {
+      filtered = filtered.filter(item => item.category !== 'Discontinued')
+    }
+
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
