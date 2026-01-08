@@ -22,6 +22,28 @@ let isSignedIn = false
 let tokenClient = null
 let accessToken = null
 
+// Cache for checkSignedIn results (5 minute TTL)
+let signedInCache = {
+  value: null,
+  timestamp: null,
+  ttl: 5 * 60 * 1000 // 5 minutes
+}
+
+// Cache for sheet metadata
+let sheetMetadataCache = {
+  sheetId: null,
+  quantityLogSheetId: null,
+  timestamp: null,
+  ttl: 10 * 60 * 1000 // 10 minutes
+}
+
+// Cache for Data sheet headers
+let dataSheetHeadersCache = {
+  headers: null,
+  timestamp: null,
+  ttl: 5 * 60 * 1000 // 5 minutes
+}
+
 // Storage keys
 const STORAGE_KEY = 'google_sheets_auth_token'
 const STORAGE_TIMESTAMP_KEY = 'google_sheets_auth_timestamp'
@@ -287,11 +309,21 @@ export const signOut = async () => {
         isSignedIn = false
         gapi.client.setToken(null)
         clearStoredToken()
+        
+        // Clear all caches
+        signedInCache = { value: null, timestamp: null, ttl: 5 * 60 * 1000 }
+        sheetMetadataCache = { sheetId: null, quantityLogSheetId: null, timestamp: null, ttl: 10 * 60 * 1000 }
+        dataSheetHeadersCache = { headers: null, timestamp: null, ttl: 5 * 60 * 1000 }
       })
     } else {
       isSignedIn = false
       gapi.client.setToken(null)
       clearStoredToken()
+      
+      // Clear all caches
+      signedInCache = { value: null, timestamp: null, ttl: 5 * 60 * 1000 }
+      sheetMetadataCache = { sheetId: null, quantityLogSheetId: null, timestamp: null, ttl: 10 * 60 * 1000 }
+      dataSheetHeadersCache = { headers: null, timestamp: null, ttl: 5 * 60 * 1000 }
     }
   } catch (error) {
     console.error('Sign out error:', error)
@@ -299,14 +331,28 @@ export const signOut = async () => {
     clearStoredToken()
     isSignedIn = false
     gapi.client.setToken(null)
+    
+    // Clear all caches
+    signedInCache = { value: null, timestamp: null, ttl: 5 * 60 * 1000 }
+    sheetMetadataCache = { sheetId: null, quantityLogSheetId: null, timestamp: null, ttl: 10 * 60 * 1000 }
+    dataSheetHeadersCache = { headers: null, timestamp: null, ttl: 5 * 60 * 1000 }
     throw error
   }
 }
 
-// Check if user is signed in
+// Check if user is signed in (with caching)
 export const checkSignedIn = async () => {
   if (!isInitialized) {
     await initGoogleAPI()
+  }
+
+  const now = Date.now()
+  
+  // Return cached result if still valid
+  if (signedInCache.value !== null && 
+      signedInCache.timestamp && 
+      (now - signedInCache.timestamp) < signedInCache.ttl) {
+    return signedInCache.value
   }
 
   try {
@@ -332,6 +378,10 @@ export const checkSignedIn = async () => {
         await queueRequest(() => gapi.client.sheets.spreadsheets.get({
           spreadsheetId: SPREADSHEET_ID
         }), { priority: 1, retries: 0 }) // Don't retry 403 errors
+        
+        // Cache successful result
+        signedInCache.value = true
+        signedInCache.timestamp = now
         return true
       } catch (err) {
         // Handle 403 errors specifically
@@ -343,6 +393,10 @@ export const checkSignedIn = async () => {
             gapi.client.setToken(null)
           }
           clearStoredToken()
+          
+          // Cache failed result
+          signedInCache.value = false
+          signedInCache.timestamp = now
           return false
         }
         
@@ -357,15 +411,26 @@ export const checkSignedIn = async () => {
         // Try to get a new token silently
         try {
           await restoreSession()
-          return isSignedIn
+          const result = isSignedIn
+          signedInCache.value = result
+          signedInCache.timestamp = now
+          return result
         } catch (refreshError) {
+          signedInCache.value = false
+          signedInCache.timestamp = now
           return false
         }
       }
     }
+    
+    // Cache failed result
+    signedInCache.value = false
+    signedInCache.timestamp = now
     return false
   } catch (error) {
     console.error('Check signed in error:', error)
+    signedInCache.value = false
+    signedInCache.timestamp = now
     return false
   }
 }
@@ -465,6 +530,105 @@ const ensureSignedIn = async () => {
   // Double-check that token is set on gapi client
   if (accessToken && gapi && gapi.client) {
     gapi.client.setToken({ access_token: accessToken })
+  }
+}
+
+// Helper function to find item row by ID without fetching all items
+const findItemRowById = async (id) => {
+  await ensureSignedIn()
+  validateSpreadsheetId()
+
+  try {
+    // Get all IDs from column A (much faster than fetching all data)
+    const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A2:A` // Only get ID column
+    }), { priority: 1, retries: 0 })
+
+    const rows = response.result.values || []
+    const rowIndex = rows.findIndex(row => row && row[0] === id)
+    
+    if (rowIndex === -1) {
+      return null
+    }
+    
+    // Return row number (rowIndex + 2: 1 for header, 1 for 0-index)
+    return {
+      rowNumber: rowIndex + 2,
+      rowIndex: rowIndex
+    }
+  } catch (error) {
+    console.error('Error finding item row:', error)
+    throw error
+  }
+}
+
+// Helper function to get item data by row number
+const getItemByRowNumber = async (rowNumber) => {
+  await ensureSignedIn()
+  validateSpreadsheetId()
+
+  try {
+    const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${SHEET_NAME}!A${rowNumber}:J${rowNumber}` // Get single row
+    }), { priority: 1, retries: 0 })
+
+    const row = response.result.values?.[0] || []
+    if (row.length === 0) {
+      return null
+    }
+
+    // Ensure row has all columns
+    const fullRow = [...row, ...Array(10 - row.length).fill('')]
+    return {
+      id: fullRow[COLUMNS.ID] || '',
+      name: fullRow[COLUMNS.NAME] || '',
+      sku: fullRow[COLUMNS.SKU] || '',
+      quantity: parseInt(fullRow[COLUMNS.QUANTITY] || '0', 10),
+      price: parseFloat(fullRow[COLUMNS.PRICE] || '0'),
+      category: fullRow[COLUMNS.CATEGORY] || '',
+      description: fullRow[COLUMNS.DESCRIPTION] || '',
+      lowStockLevel: parseInt(fullRow[COLUMNS.LOW_STOCK_LEVEL] || LOW_STOCK_THRESHOLD.toString(), 10),
+      type: fullRow[COLUMNS.TYPE] || '',
+      lastUpdated: fullRow[COLUMNS.LAST_UPDATED] || ''
+    }
+  } catch (error) {
+    console.error('Error getting item by row:', error)
+    throw error
+  }
+}
+
+// Helper function to get Data sheet headers (with caching)
+const getDataSheetHeaders = async () => {
+  const now = Date.now()
+  
+  // Return cached headers if still valid
+  if (dataSheetHeadersCache.headers && 
+      dataSheetHeadersCache.timestamp && 
+      (now - dataSheetHeadersCache.timestamp) < dataSheetHeadersCache.ttl) {
+    return dataSheetHeadersCache.headers
+  }
+
+  await ensureSignedIn()
+  validateSpreadsheetId()
+
+  try {
+    const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `${DATA_SHEET_NAME}!A1:ZZ1` // Get header row
+    }), { priority: 2 })
+
+    const headers = response.result.values?.[0] || []
+    
+    // Cache the headers
+    dataSheetHeadersCache.headers = headers
+    dataSheetHeadersCache.timestamp = now
+    
+    return headers
+  } catch (error) {
+    console.error('Error fetching Data sheet headers:', error)
+    return []
   }
 }
 
@@ -600,13 +764,9 @@ export const getCategories = async () => {
   validateSpreadsheetId()
 
   try {
-    // First, get the Data sheet to find the category column
-    const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${DATA_SHEET_NAME}!A1:ZZ1` // Get header row to find category column
-    }), { priority: 2 })
-
-    const headers = response.result.values?.[0] || []
+    // Use cached headers
+    const headers = await getDataSheetHeaders()
+    
     const categoryColumnIndex = headers.findIndex(
       header => header && header.toString().toLowerCase().trim() === 'category'
     )
@@ -649,13 +809,9 @@ export const getTypes = async () => {
   validateSpreadsheetId()
 
   try {
-    // First, get the Data sheet to find the type column
-    const response = await queueRequest(() => gapi.client.sheets.spreadsheets.values.get({
-      spreadsheetId: SPREADSHEET_ID,
-      range: `${DATA_SHEET_NAME}!A1:ZZ1` // Get header row to find type column
-    }), { priority: 2 })
-
-    const headers = response.result.values?.[0] || []
+    // Use cached headers (shared with getCategories)
+    const headers = await getDataSheetHeaders()
+    
     const typeColumnIndex = headers.findIndex(
       header => header && header.toString().toLowerCase().trim() === 'type'
     )
@@ -743,20 +899,23 @@ export const updateItem = async (id, item) => {
   validateSpreadsheetId()
 
   try {
-    // First, find the row number for this item and get old data
-    const allItems = await getAllItems()
-    const itemIndex = allItems.findIndex(i => i.id === id)
-
-    if (itemIndex === -1) {
+    // Find row number efficiently (only fetches ID column, not all data)
+    const rowInfo = await findItemRowById(id)
+    
+    if (!rowInfo) {
       throw new Error('Item not found')
     }
 
-    const oldItem = allItems[itemIndex]
+    const rowNumber = rowInfo.rowNumber
+    
+    // Get old item data from the specific row (1 API call instead of fetching all items)
+    const oldItem = await getItemByRowNumber(rowNumber)
+    if (!oldItem) {
+      throw new Error('Item not found')
+    }
+
     const oldQuantity = oldItem.quantity || 0
     const newQuantity = parseInt(item.quantity?.toString() || '0', 10)
-
-    // Row number is itemIndex + 2 (1 for header, 1 for 0-index)
-    const rowNumber = itemIndex + 2
     const now = new Date().toISOString()
 
     // Preserve existing type value if not provided in update
@@ -815,18 +974,16 @@ export const deleteItem = async (id) => {
   validateSpreadsheetId()
 
   try {
-    // First, find the row number for this item
-    const allItems = await getAllItems()
-    const itemIndex = allItems.findIndex(i => i.id === id)
-
-    if (itemIndex === -1) {
+    // Find row number efficiently (only fetches ID column, not all data)
+    const rowInfo = await findItemRowById(id)
+    
+    if (!rowInfo) {
       throw new Error('Item not found')
     }
 
-    // Row number is itemIndex + 2 (1 for header, 1 for 0-index)
-    const rowNumber = itemIndex + 2
+    const rowNumber = rowInfo.rowNumber
 
-    // Get sheet ID first
+    // Get sheet ID (with caching)
     const sheetId = await getSheetId()
 
     await queueRequest(() => gapi.client.sheets.spreadsheets.batchUpdate({
@@ -852,8 +1009,17 @@ export const deleteItem = async (id) => {
   }
 }
 
-// Get sheet ID by name
+// Get sheet ID by name (with caching)
 const getSheetId = async () => {
+  const now = Date.now()
+  
+  // Return cached sheet ID if still valid
+  if (sheetMetadataCache.sheetId && 
+      sheetMetadataCache.timestamp && 
+      (now - sheetMetadataCache.timestamp) < sheetMetadataCache.ttl) {
+    return sheetMetadataCache.sheetId
+  }
+
   try {
     const response = await queueRequest(() => gapi.client.sheets.spreadsheets.get({
       spreadsheetId: SPREADSHEET_ID
@@ -867,7 +1033,13 @@ const getSheetId = async () => {
       throw new Error(`Sheet "${SHEET_NAME}" not found`)
     }
 
-    return sheet.properties.sheetId
+    const sheetId = sheet.properties.sheetId
+    
+    // Cache the result
+    sheetMetadataCache.sheetId = sheetId
+    sheetMetadataCache.timestamp = now
+    
+    return sheetId
   } catch (error) {
     console.error('Error getting sheet ID:', error)
     throw error

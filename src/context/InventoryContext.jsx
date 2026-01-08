@@ -57,31 +57,31 @@ export const InventoryProvider = ({ children }) => {
 
   // Check Google API script readiness
   useEffect(() => {
-    const checkReadiness = () => {
-      if (isGoogleAPIReady()) {
-        setIsGoogleAPIReadyState(true)
-        return
-      }
-      
-      // Poll for script readiness
-      const checkInterval = setInterval(() => {
-        if (isGoogleAPIReady()) {
-          setIsGoogleAPIReadyState(true)
-          clearInterval(checkInterval)
-        }
-      }, 100)
-      
-      // Stop checking after 10 seconds
-      setTimeout(() => {
-        clearInterval(checkInterval)
-        // Even if not ready, allow user to try (scripts will load on demand)
-        setIsGoogleAPIReadyState(true)
-      }, 10000)
-      
-      return () => clearInterval(checkInterval)
+    if (isGoogleAPIReady()) {
+      setIsGoogleAPIReadyState(true)
+      return
     }
     
-    checkReadiness()
+    // Poll for script readiness
+    const checkInterval = setInterval(() => {
+      if (isGoogleAPIReady()) {
+        setIsGoogleAPIReadyState(true)
+        clearInterval(checkInterval)
+      }
+    }, 100)
+    
+    // Stop checking after 10 seconds
+    const timeoutId = setTimeout(() => {
+      clearInterval(checkInterval)
+      // Even if not ready, allow user to try (scripts will load on demand)
+      setIsGoogleAPIReadyState(true)
+    }, 10000)
+    
+    // Cleanup function
+    return () => {
+      clearInterval(checkInterval)
+      clearTimeout(timeoutId)
+    }
   }, [])
 
   // Initialize Google API on mount
