@@ -86,6 +86,10 @@ export const InventoryProvider = ({ children }) => {
 
   // Initialize Google API on mount
   useEffect(() => {
+    // #region agent log
+    console.log('[DEBUG-H] useEffect INITIALIZE running - mount/remount detected');
+    // #endregion
+    
     const initialize = async () => {
       // Validate environment variables first
       const envErrors = validateEnvVars()
@@ -362,6 +366,10 @@ export const InventoryProvider = ({ children }) => {
 
   // Authentication functions
   const handleSignIn = useCallback(async () => {
+    // #region agent log
+    console.log('[DEBUG-G] handleSignIn() CALLED from context');
+    // #endregion
+    
     try {
       await signIn()
       setIsAuthenticated(true)

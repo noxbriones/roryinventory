@@ -180,6 +180,10 @@ const cleanupStaleOAuthState = () => {
 
 // Sign in user
 export const signIn = async () => {
+  // #region agent log
+  console.log('[DEBUG-F] signIn() CALLED - Stack trace:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
+  // #endregion
+  
   if (!isInitialized) {
     await initGoogleAPI()
   }
