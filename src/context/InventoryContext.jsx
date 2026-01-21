@@ -86,10 +86,6 @@ export const InventoryProvider = ({ children }) => {
 
   // Initialize Google API on mount
   useEffect(() => {
-    // #region agent log
-    console.log('[DEBUG-H] useEffect INITIALIZE running - mount/remount detected');
-    // #endregion
-    
     const initialize = async () => {
       // Validate environment variables first
       const envErrors = validateEnvVars()
@@ -366,24 +362,13 @@ export const InventoryProvider = ({ children }) => {
 
   // Authentication functions
   const handleSignIn = useCallback(async () => {
-    // #region agent log
-    console.log('[DEBUG-G] handleSignIn() CALLED from context');
-    // #endregion
-    
     try {
       await signIn()
       setIsAuthenticated(true)
       
-      // #region agent log
-      console.log('[DEBUG-FIX] Sign in successful, waiting before fetching data to ensure token propagation');
-      // #endregion
-      
-      // Wait longer for token to fully propagate to avoid race conditions
+      // Wait for token to fully propagate to avoid race conditions
+      // This prevents ensureSignedIn() from triggering additional signIn() calls
       await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // #region agent log
-      console.log('[DEBUG-FIX] Now fetching data with established token');
-      // #endregion
       
       await Promise.all([
         fetchItems(),

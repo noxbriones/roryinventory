@@ -180,10 +180,6 @@ const cleanupStaleOAuthState = () => {
 
 // Sign in user
 export const signIn = async () => {
-  // #region agent log
-  console.log('[DEBUG-F] signIn() CALLED - Stack trace:', new Error().stack?.split('\n').slice(1, 4).join('\n'));
-  // #endregion
-  
   if (!isInitialized) {
     await initGoogleAPI()
   }
@@ -217,10 +213,6 @@ export const signIn = async () => {
       
       // Callback function for token response
       const handleTokenResponse = (response) => {
-        // #region agent log
-        console.log('[DEBUG-B] handleTokenResponse CALLED:', {hasError:!!response.error,errorType:response.error,hasAccessToken:!!response.access_token});
-        // #endregion
-        
         console.log('Token response received:', response.error ? 'ERROR' : 'SUCCESS')
         
         // Clear pending flag, start time, and timeout
@@ -254,11 +246,8 @@ export const signIn = async () => {
         // Set the access token for gapi requests
         gapi.client.setToken({ access_token: accessToken })
         
-        // #region agent log
-        console.log('[DEBUG-FIX] Token received and set, updating signedInCache to prevent immediate re-verification');
-        // #endregion
-        
         // Update cache immediately to prevent unnecessary verification
+        // This fixes the issue where ensureSignedIn() was triggering multiple signIn() calls
         signedInCache.value = true
         signedInCache.timestamp = Date.now()
         
@@ -273,11 +262,6 @@ export const signIn = async () => {
       // Popup mode often fails due to browser security policies and COOP
       // Redirect mode avoids window.opener issues with Cross-Origin-Opener-Policy
       const redirectUri = window.location.origin + window.location.pathname
-      
-      // #region agent log
-      console.log('[DEBUG-A] Initializing token client:', {redirectUri,hasOAuthCode,uxMode:'redirect',clientId:GOOGLE_CLIENT_ID?.substring(0,20)+'...'});
-      // #endregion
-      
       const client = google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: SCOPES,
@@ -286,37 +270,21 @@ export const signIn = async () => {
         callback: handleTokenResponse
       })
       
-      // #region agent log
-      console.log('[DEBUG-B] Token client initialized:', {clientCreated:!!client,callbackRegistered:!!handleTokenResponse});
-      // #endregion
-      
       if (!hasOAuthCode) {
         // Mark that we're initiating OAuth and record start time
         sessionStorage.setItem(OAUTH_PENDING_KEY, 'true')
         sessionStorage.setItem(OAUTH_START_TIME_KEY, Date.now().toString())
         
-        // #region agent log
-        console.log('[DEBUG-C] BEFORE requestAccessToken:', {hasOAuthCode:false,pendingSet:true,clientType:typeof client});
-        // #endregion
-        
         // Request access token (will redirect to Google)
         try {
           console.log('Initiating OAuth redirect...')
           client.requestAccessToken()
-          
-          // #region agent log
-          console.log('[DEBUG-C] AFTER requestAccessToken called - Should redirect soon');
-          // #endregion
-          
           // The redirect will happen, so this promise won't resolve until we return
           // The callback will fire when the page loads after redirect
           // Note: With redirect mode, the page will navigate away, so this code
           // won't execute until after the redirect completes
         } catch (error) {
-          // #region agent log
-          console.log('[DEBUG-C] requestAccessToken ERROR:', {errorMsg:error?.message,errorStr:String(error)});
-          // #endregion
-          
+          console.error('requestAccessToken error:', error)
           sessionStorage.removeItem(OAUTH_PENDING_KEY)
           sessionStorage.removeItem(OAUTH_START_TIME_KEY)
           oauthCallbackResolve = null
@@ -343,10 +311,6 @@ export const signIn = async () => {
         // The callback should fire automatically when the client is initialized
         console.log('Returning from OAuth redirect, waiting for token callback...')
         
-        // #region agent log
-        console.log('[DEBUG-D] RETURNING from OAuth redirect:', {hasOAuthCode:true,urlHasCode:urlParams.has('code'),urlHasState:urlParams.has('state'),isSignedIn});
-        // #endregion
-        
         // Set a shorter timeout to catch issues faster
         oauthTimeoutId = setTimeout(() => {
           if (!isSignedIn) {
@@ -359,42 +323,18 @@ export const signIn = async () => {
               oauthCallbackReject = null
             }
           }
-        }, 5000) // Reduced to 5 seconds for faster feedback
+        }, 5000)
         
         // With redirect mode, the callback should fire automatically
         // Try requesting the token to trigger the callback
         try {
-          // #region agent log
-          console.log('[DEBUG-D] BEFORE post-redirect requestAccessToken:', {attempt:1,promptParam:''});
-          // #endregion
-          
           client.requestAccessToken({ prompt: '' })
-          
-          // #region agent log
-          console.log('[DEBUG-D] AFTER post-redirect requestAccessToken - COOP error may occur here');
-          // #endregion
         } catch (error) {
-          // #region agent log
-          console.log('[DEBUG-E] First post-redirect requestAccessToken FAILED:', {errorMsg:error?.message,errorStr:String(error),isCOOPError:String(error).includes('COOP')||String(error).includes('opener')});
-          // #endregion
-          
           console.warn('Token request after redirect failed:', error)
           // Try without any prompt parameter
           try {
-            // #region agent log
-            console.log('[DEBUG-E] RETRY post-redirect requestAccessToken:', {attempt:2,noPromptParam:true});
-            // #endregion
-            
             client.requestAccessToken()
-            
-            // #region agent log
-            console.log('[DEBUG-E] AFTER retry requestAccessToken');
-            // #endregion
           } catch (retryError) {
-            // #region agent log
-            console.log('[DEBUG-E] RETRY ALSO FAILED:', {errorMsg:retryError?.message,errorStr:String(retryError)});
-            // #endregion
-            
             console.error('Retry token request failed:', retryError)
             // Clear timeout and reject
             if (oauthTimeoutId) {
