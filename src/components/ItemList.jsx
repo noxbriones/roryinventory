@@ -5,12 +5,16 @@ import { Card, CardContent } from './ui/card'
 import { Button } from './ui/button'
 import { Badge } from './ui/badge'
 import { LOW_STOCK_THRESHOLD } from '../utils/constants'
-import { Loader2, AlertCircle, Package, Table, LayoutGrid, RefreshCw } from 'lucide-react'
+import { Loader2, AlertCircle, Package, Table, LayoutGrid, RefreshCw, ChevronDown } from 'lucide-react'
+
+// Items per page for pagination
+const ITEMS_PER_PAGE = 50
 
 const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
   const { filteredItems, loading, error, filterType } = useInventory()
   const [viewMode, setViewMode] = useState('card') // 'card' or 'table'
   const [checkedItems, setCheckedItems] = useState(new Set()) // Track checked items by ID
+  const [displayCount, setDisplayCount] = useState(ITEMS_PER_PAGE) // For progressive loading
 
   const toggleViewMode = useCallback(() => {
     setViewMode(prev => prev === 'card' ? 'table' : 'card')
@@ -27,6 +31,22 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
       return newSet
     })
   }, [])
+
+  const handleLoadMore = useCallback(() => {
+    setDisplayCount(prev => Math.min(prev + ITEMS_PER_PAGE, filteredItems.length))
+  }, [filteredItems.length])
+
+  // Reset display count when filters change
+  React.useEffect(() => {
+    setDisplayCount(ITEMS_PER_PAGE)
+  }, [filteredItems.length])
+
+  // Get visible items for current page
+  const visibleItems = useMemo(() => {
+    return filteredItems.slice(0, displayCount)
+  }, [filteredItems, displayCount])
+
+  const hasMoreItems = displayCount < filteredItems.length
 
   if (loading && filteredItems.length === 0) {
     return (
@@ -103,16 +123,31 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
       </div>
       
       {viewMode === 'card' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {filteredItems.map(item => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              onEdit={onEdit}
-              showCheckbox={filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both'}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            {visibleItems.map(item => (
+              <ItemCard
+                key={item.id}
+                item={item}
+                onEdit={onEdit}
+                showCheckbox={filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both'}
+              />
+            ))}
+          </div>
+          {hasMoreItems && (
+            <div className="flex justify-center mt-6">
+              <Button
+                onClick={handleLoadMore}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                Load More ({filteredItems.length - displayCount} remaining)
+              </Button>
+            </div>
+          )}
+        </>
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
@@ -133,7 +168,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item, index) => {
+                {visibleItems.map((item, index) => {
                   const lowStockThreshold = item.lowStockLevel || LOW_STOCK_THRESHOLD
                   const isLowStock = item.quantity < lowStockThreshold
                   const isOutOfStock = item.quantity === 0
@@ -150,7 +185,7 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
                       key={item.id}
                       onClick={() => onEdit(item)}
                       className={`cursor-pointer hover:bg-primary/10 transition-colors ${
-                        index !== filteredItems.length - 1 ? 'border-b' : ''
+                        index !== visibleItems.length - 1 ? 'border-b' : ''
                       } ${(filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both') && showCheckboxForItem && isChecked ? 'opacity-30' : ''}`}
                     >
                       {(filterType === 'Non-local' || filterType === 'Local' || filterType === 'Both') && 
@@ -184,6 +219,19 @@ const ItemList = ({ onEdit, onRefresh, refreshLoading }) => {
               </tbody>
             </table>
           </div>
+          {hasMoreItems && (
+            <div className="flex justify-center mt-4 pb-4">
+              <Button
+                onClick={handleLoadMore}
+                variant="outline"
+                size="lg"
+                className="gap-2"
+              >
+                <ChevronDown className="h-4 w-4" />
+                Load More ({filteredItems.length - displayCount} remaining)
+              </Button>
+            </div>
+          )}
         </Card>
       )}
     </div>

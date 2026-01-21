@@ -1,0 +1,20 @@
+# Browsers that we support for optimal performance
+# This targets modern browsers for smaller bundle sizes
+
+# Production build targets
+[production]
+>0.5%
+last 2 versions
+not dead
+not IE 11
+not op_mini all
+chrome >= 90
+firefox >= 88
+safari >= 14
+edge >= 90
+
+# Development build targets (more lenient)
+[development]
+last 1 chrome version
+last 1 firefox version
+last 1 safari version

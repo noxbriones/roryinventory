@@ -97,53 +97,91 @@ export const InventoryProvider = ({ children }) => {
       }
 
       try {
+        console.log('Initializing Google API...')
         await initGoogleAPI()
+        console.log('Google API initialized successfully')
         
         // Check if we're returning from OAuth redirect
         const urlParams = new URLSearchParams(window.location.search)
         const hasOAuthCode = urlParams.has('code') || urlParams.has('state')
         const isOAuthPending = sessionStorage.getItem('google_sheets_oauth_pending') === 'true'
         
+        console.log('OAuth check:', { hasOAuthCode, isOAuthPending })
+        
         if (hasOAuthCode && isOAuthPending) {
-          // We're returning from OAuth redirect, try to sign in
-          // The signIn function will handle the OAuth callback
+          // We're returning from OAuth redirect
+          console.log('Returning from OAuth redirect, attempting sign in...')
+          setLoading(true)
+          
           try {
-            await signIn()
+            const signInResult = await signIn()
+            console.log('Sign in successful:', signInResult)
             setIsAuthenticated(true)
+            
+            // Give a small delay to ensure token is properly set
+            await new Promise(resolve => setTimeout(resolve, 100))
+            
+            console.log('Fetching initial data...')
             await Promise.all([
               fetchItems(),
               fetchCategoriesList(),
               fetchTypesList()
             ])
+            console.log('Data fetched successfully')
           } catch (err) {
-            // If sign in fails, check if already signed in
-            const signedIn = await checkSignedIn()
-            setIsAuthenticated(signedIn)
-            if (signedIn) {
+            console.error('Sign in or data fetch failed:', err)
+            
+            // If sign in fails, check if already signed in (fallback)
+            try {
+              const signedIn = await checkSignedIn()
+              setIsAuthenticated(signedIn)
+              
+              if (signedIn) {
+                console.log('User was already signed in, fetching data...')
+                await Promise.all([
+                  fetchItems(),
+                  fetchCategoriesList(),
+                  fetchTypesList()
+                ])
+              } else {
+                setError('Failed to complete sign in: ' + (err?.message || String(err) || 'Unknown error'))
+              }
+            } catch (checkErr) {
+              console.error('Check signed in failed:', checkErr)
+              setError('Failed to verify authentication: ' + (checkErr?.message || String(checkErr) || 'Unknown error'))
+            }
+          } finally {
+            setLoading(false)
+          }
+        } else {
+          // Normal initialization - check if user is already signed in
+          console.log('Normal initialization, checking existing session...')
+          const signedIn = await checkSignedIn()
+          console.log('Signed in check result:', signedIn)
+          setIsAuthenticated(signedIn)
+          
+          if (signedIn) {
+            console.log('User signed in, fetching data...')
+            setLoading(true)
+            try {
               await Promise.all([
                 fetchItems(),
                 fetchCategoriesList(),
                 fetchTypesList()
               ])
-            } else {
-              setError('Failed to complete sign in: ' + (err?.message || String(err) || 'Unknown error'))
+              console.log('Data fetched successfully')
+            } catch (fetchErr) {
+              console.error('Failed to fetch data:', fetchErr)
+              setError('Failed to fetch data: ' + (fetchErr?.message || String(fetchErr) || 'Unknown error'))
+            } finally {
+              setLoading(false)
             }
-          }
-        } else {
-          // Normal initialization
-          const signedIn = await checkSignedIn()
-          setIsAuthenticated(signedIn)
-          if (signedIn) {
-            await Promise.all([
-              fetchItems(),
-              fetchCategoriesList(),
-              fetchTypesList()
-            ])
           }
         }
       } catch (err) {
         setError('Failed to initialize Google API: ' + (err?.message || String(err) || 'Unknown error'))
         console.error('Initialization error:', err)
+        setLoading(false)
       }
     }
     initialize()

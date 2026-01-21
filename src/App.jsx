@@ -73,7 +73,13 @@ function AppContent() {
       <div className="min-h-screen flex items-center justify-center bg-primary p-4">
         <div className="bg-card rounded-lg shadow-xl p-6 sm:p-8 max-w-md w-full">
           <div className="flex justify-center mb-4">
-            <img src={`${import.meta.env.BASE_URL}logo.png`} alt="RORY Logo" className="h-16 sm:h-20 w-auto" />
+            <img 
+              src={`${import.meta.env.BASE_URL}logo.png`} 
+              alt="RORY Logo" 
+              className="h-16 sm:h-20 w-auto" 
+              loading="eager"
+              decoding="async"
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-center mb-2 text-card-foreground">RORY Stock Inventory</h1>
           <p className="text-center text-sm sm:text-base text-muted-foreground mb-6">Sign in with Google to access your inventory</p>
@@ -106,7 +112,13 @@ function AppContent() {
               className="flex items-center gap-2 sm:gap-3 min-w-0 flex-shrink cursor-pointer hover:opacity-80 transition-opacity"
               onClick={() => setCurrentPage('inventory')}
             >
-              <img src={`${import.meta.env.BASE_URL}logo-white.png`} alt="RORY Logo" className="h-6 sm:h-8 w-auto flex-shrink-0" />
+              <img 
+                src={`${import.meta.env.BASE_URL}logo-white.png`} 
+                alt="RORY Logo" 
+                className="h-6 sm:h-8 w-auto flex-shrink-0"
+                loading="lazy"
+                decoding="async"
+              />
               <h1 className="text-base sm:text-xl md:text-2xl font-bold truncate min-w-0">
                 RORY Stock Inventory
               </h1>

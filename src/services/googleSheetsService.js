@@ -48,6 +48,7 @@ let dataSheetHeadersCache = {
 const STORAGE_KEY = 'google_sheets_auth_token'
 const STORAGE_TIMESTAMP_KEY = 'google_sheets_auth_timestamp'
 const OAUTH_PENDING_KEY = 'google_sheets_oauth_pending'
+const OAUTH_START_TIME_KEY = 'google_sheets_oauth_start_time'
 
 // Load token from localStorage
 const loadStoredToken = () => {
@@ -155,6 +156,28 @@ export const isGoogleAPIReady = () => {
   return !!(window.google && window.google.accounts && window.gapi)
 }
 
+// Clean up stale OAuth state (if user abandoned OAuth flow)
+const cleanupStaleOAuthState = () => {
+  try {
+    const oauthStartTime = sessionStorage.getItem(OAUTH_START_TIME_KEY)
+    const isOAuthPending = sessionStorage.getItem(OAUTH_PENDING_KEY) === 'true'
+    
+    if (isOAuthPending && oauthStartTime) {
+      const timeElapsed = Date.now() - parseInt(oauthStartTime, 10)
+      const fiveMinutes = 5 * 60 * 1000
+      
+      // If OAuth was started more than 5 minutes ago, clear it
+      if (timeElapsed > fiveMinutes) {
+        console.warn('Cleaning up stale OAuth state (started', Math.floor(timeElapsed / 1000), 'seconds ago)')
+        sessionStorage.removeItem(OAUTH_PENDING_KEY)
+        sessionStorage.removeItem(OAUTH_START_TIME_KEY)
+      }
+    }
+  } catch (error) {
+    console.error('Error cleaning up OAuth state:', error)
+  }
+}
+
 // Sign in user
 export const signIn = async () => {
   if (!isInitialized) {
@@ -164,6 +187,9 @@ export const signIn = async () => {
   if (!google || !google.accounts) {
     throw new Error('Google Identity Services not loaded')
   }
+
+  // Clean up any stale OAuth state before starting
+  cleanupStaleOAuthState()
 
   return new Promise((resolve, reject) => {
     try {
@@ -176,6 +202,7 @@ export const signIn = async () => {
         // Clean URL and clear pending flag
         window.history.replaceState({}, document.title, window.location.pathname)
         sessionStorage.removeItem(OAUTH_PENDING_KEY)
+        sessionStorage.removeItem(OAUTH_START_TIME_KEY)
         reject(new Error(`OAuth error: ${oauthError}`))
         return
       }
@@ -186,8 +213,11 @@ export const signIn = async () => {
       
       // Callback function for token response
       const handleTokenResponse = (response) => {
-        // Clear pending flag and timeout
+        console.log('Token response received:', response.error ? 'ERROR' : 'SUCCESS')
+        
+        // Clear pending flag, start time, and timeout
         sessionStorage.removeItem(OAUTH_PENDING_KEY)
+        sessionStorage.removeItem(OAUTH_START_TIME_KEY)
         if (oauthTimeoutId) {
           clearTimeout(oauthTimeoutId)
           oauthTimeoutId = null
@@ -235,11 +265,13 @@ export const signIn = async () => {
       })
       
       if (!hasOAuthCode) {
-        // Mark that we're initiating OAuth
+        // Mark that we're initiating OAuth and record start time
         sessionStorage.setItem(OAUTH_PENDING_KEY, 'true')
+        sessionStorage.setItem(OAUTH_START_TIME_KEY, Date.now().toString())
         
         // Request access token (will redirect to Google)
         try {
+          console.log('Initiating OAuth redirect...')
           client.requestAccessToken()
           // The redirect will happen, so this promise won't resolve until we return
           // The callback will fire when the page loads after redirect
@@ -247,6 +279,7 @@ export const signIn = async () => {
           // won't execute until after the redirect completes
         } catch (error) {
           sessionStorage.removeItem(OAUTH_PENDING_KEY)
+          sessionStorage.removeItem(OAUTH_START_TIME_KEY)
           oauthCallbackResolve = null
           oauthCallbackReject = null
           
@@ -269,23 +302,44 @@ export const signIn = async () => {
       } else {
         // We're returning from OAuth redirect
         // The callback should fire automatically when the client is initialized
-        // Set a timeout in case it doesn't fire
-        oauthTimeoutId = setTimeout(() => {
-          if (!isSignedIn && oauthCallbackReject) {
-            sessionStorage.removeItem(OAUTH_PENDING_KEY)
-            oauthCallbackReject(new Error('OAuth callback timeout after redirect'))
-            oauthCallbackResolve = null
-            oauthCallbackReject = null
-          }
-        }, 10000)
+        console.log('Returning from OAuth redirect, waiting for token callback...')
         
-        // Trigger the callback by requesting token (with no prompt since we have code)
-        // The callback will be called automatically by Google Identity Services
+        // Set a shorter timeout to catch issues faster
+        oauthTimeoutId = setTimeout(() => {
+          if (!isSignedIn) {
+            console.error('OAuth callback timeout - token not received')
+            sessionStorage.removeItem(OAUTH_PENDING_KEY)
+            
+            if (oauthCallbackReject) {
+              oauthCallbackReject(new Error('OAuth callback timeout after redirect. Please try signing in again.'))
+              oauthCallbackResolve = null
+              oauthCallbackReject = null
+            }
+          }
+        }, 5000) // Reduced to 5 seconds for faster feedback
+        
+        // With redirect mode, the callback should fire automatically
+        // Try requesting the token to trigger the callback
         try {
-          client.requestAccessToken({ prompt: 'none' })
+          client.requestAccessToken({ prompt: '' })
         } catch (error) {
-          // If that fails, the callback should still fire automatically
-          console.log('Note: Manual token request failed, waiting for automatic callback')
+          console.warn('Token request after redirect failed:', error)
+          // Try without any prompt parameter
+          try {
+            client.requestAccessToken()
+          } catch (retryError) {
+            console.error('Retry token request failed:', retryError)
+            // Clear timeout and reject
+            if (oauthTimeoutId) {
+              clearTimeout(oauthTimeoutId)
+            }
+            sessionStorage.removeItem(OAUTH_PENDING_KEY)
+            if (oauthCallbackReject) {
+              oauthCallbackReject(new Error('Failed to complete OAuth flow. Please try signing in again.'))
+              oauthCallbackResolve = null
+              oauthCallbackReject = null
+            }
+          }
         }
       }
     } catch (error) {
