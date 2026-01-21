@@ -253,6 +253,15 @@ export const signIn = async () => {
         saveStoredToken(accessToken)
         // Set the access token for gapi requests
         gapi.client.setToken({ access_token: accessToken })
+        
+        // #region agent log
+        console.log('[DEBUG-FIX] Token received and set, updating signedInCache to prevent immediate re-verification');
+        // #endregion
+        
+        // Update cache immediately to prevent unnecessary verification
+        signedInCache.value = true
+        signedInCache.timestamp = Date.now()
+        
         if (oauthCallbackResolve) {
           oauthCallbackResolve(true)
         }

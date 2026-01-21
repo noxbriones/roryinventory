@@ -373,6 +373,18 @@ export const InventoryProvider = ({ children }) => {
     try {
       await signIn()
       setIsAuthenticated(true)
+      
+      // #region agent log
+      console.log('[DEBUG-FIX] Sign in successful, waiting before fetching data to ensure token propagation');
+      // #endregion
+      
+      // Wait longer for token to fully propagate to avoid race conditions
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // #region agent log
+      console.log('[DEBUG-FIX] Now fetching data with established token');
+      // #endregion
+      
       await Promise.all([
         fetchItems(),
         fetchCategoriesList(),
